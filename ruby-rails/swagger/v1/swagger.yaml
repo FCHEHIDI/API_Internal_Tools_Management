@@ -1,0 +1,473 @@
+---
+openapi: 3.0.1
+info:
+  title: Internal Tools API
+  version: v1
+  description: API for managing internal SaaS tools with CRUD operations and advanced
+    analytics
+paths:
+  "/api/analytics/department-costs":
+    get:
+      summary: Department costs analysis
+      tags:
+      - Analytics
+      parameters:
+      - name: sort_by
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: order
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  departments:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        department:
+                          type: string
+                        tool_count:
+                          type: integer
+                        total_monthly_cost:
+                          type: number
+                        average_cost_per_tool:
+                          type: number
+                        percentage_of_budget:
+                          type: number
+                  summary:
+                    type: object
+                    properties:
+                      total_monthly_cost:
+                        type: number
+                      total_annual_cost:
+                        type: number
+  "/api/analytics/expensive-tools":
+    get:
+      summary: Most expensive tools
+      tags:
+      - Analytics
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expensive_tools:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        vendor:
+                          type: string
+                        category_name:
+                          type: string
+                        monthly_cost:
+                          type: number
+                        annual_cost:
+                          type: number
+                        active_users_count:
+                          type: integer
+                        cost_per_user:
+                          type: number
+                        efficiency_rating:
+                          type: string
+                        potential_annual_savings:
+                          type: number
+                  summary:
+                    type: object
+                    properties:
+                      total_cost_top_tools:
+                        type: number
+                      total_potential_annual_savings:
+                        type: number
+  "/api/analytics/tools-by-category":
+    get:
+      summary: Tools distribution by category
+      tags:
+      - Analytics
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        category_id:
+                          type: integer
+                        category_name:
+                          type: string
+                        tool_count:
+                          type: integer
+                        total_monthly_cost:
+                          type: number
+                        average_cost_per_tool:
+                          type: number
+                        percentage_of_total_cost:
+                          type: number
+                  summary:
+                    type: object
+                    properties:
+                      total_categories:
+                        type: integer
+                      most_efficient_category:
+                        type: string
+  "/api/analytics/low-usage-tools":
+    get:
+      summary: Tools with low usage
+      tags:
+      - Analytics
+      parameters:
+      - name: max_users
+        in: query
+        required: false
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  low_usage_tools:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        vendor:
+                          type: string
+                        category_name:
+                          type: string
+                        monthly_cost:
+                          type: number
+                        active_users_count:
+                          type: integer
+                        warning_level:
+                          type: string
+                        potential_monthly_savings:
+                          type: number
+                        recommendation:
+                          type: string
+                  summary:
+                    type: object
+                    properties:
+                      total_underutilized_tools:
+                        type: integer
+                      total_potential_monthly_savings:
+                        type: number
+                      total_potential_annual_savings:
+                        type: number
+  "/api/analytics/vendor-summary":
+    get:
+      summary: Vendor summary analysis
+      tags:
+      - Analytics
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  vendors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        vendor:
+                          type: string
+                        tool_count:
+                          type: integer
+                        total_monthly_cost:
+                          type: number
+                        average_cost_per_tool:
+                          type: number
+                        total_active_users:
+                          type: integer
+                        unique_departments:
+                          type: integer
+                        efficiency_rating:
+                          type: string
+                        consolidation_opportunity:
+                          type: boolean
+                        recommendation:
+                          type: string
+                  summary:
+                    type: object
+                    properties:
+                      total_vendors:
+                        type: integer
+                      total_monthly_spend:
+                        type: number
+  "/api/tools":
+    get:
+      summary: List all tools
+      tags:
+      - Tools
+      parameters:
+      - name: department
+        in: query
+        required: false
+        description: Filter by department
+        schema:
+          type: string
+      - name: status
+        in: query
+        required: false
+        description: Filter by status
+        schema:
+          type: string
+      - name: category_id
+        in: query
+        required: false
+        description: Filter by category
+        schema:
+          type: integer
+      - name: search
+        in: query
+        required: false
+        description: Search by name
+        schema:
+          type: string
+      - name: min_cost
+        in: query
+        required: false
+        description: Minimum monthly cost
+        schema:
+          type: number
+      - name: max_cost
+        in: query
+        required: false
+        description: Maximum monthly cost
+        schema:
+          type: number
+      - name: sort_by
+        in: query
+        required: false
+        description: Sort field
+        schema:
+          type: string
+      - name: order
+        in: query
+        required: false
+        description: Sort order (asc/desc)
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        description: Number of results (max 100)
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Tool"
+    post:
+      summary: Create a tool
+      tags:
+      - Tools
+      parameters: []
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Tool"
+        '422':
+          description: unprocessable entity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tool:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    vendor:
+                      type: string
+                    website_url:
+                      type: string
+                    category_id:
+                      type: integer
+                    monthly_cost:
+                      type: number
+                    active_users_count:
+                      type: integer
+                    owner_department:
+                      type: string
+                    status:
+                      type: string
+                  required:
+                  - name
+                  - vendor
+                  - category_id
+                  - monthly_cost
+                  - owner_department
+  "/api/tools/{id}":
+    parameters:
+    - name: id
+      in: path
+      description: Tool ID
+      required: true
+      schema:
+        type: integer
+    get:
+      summary: Show a tool
+      tags:
+      - Tools
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Tool"
+        '404':
+          description: not found
+    put:
+      summary: Update a tool
+      tags:
+      - Tools
+      parameters: []
+      responses:
+        '200':
+          description: successful
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Tool"
+        '404':
+          description: not found
+        '422':
+          description: unprocessable entity
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                tool:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                    vendor:
+                      type: string
+                    website_url:
+                      type: string
+                    category_id:
+                      type: integer
+                    monthly_cost:
+                      type: number
+                    active_users_count:
+                      type: integer
+                    owner_department:
+                      type: string
+                    status:
+                      type: string
+    delete:
+      summary: Delete a tool
+      tags:
+      - Tools
+      responses:
+        '204':
+          description: no content
+        '404':
+          description: not found
+servers:
+- url: http://localhost:3000
+  description: Development server
+components:
+  schemas:
+    Tool:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        vendor:
+          type: string
+        website_url:
+          type: string
+        category_id:
+          type: integer
+        monthly_cost:
+          type: number
+          format: decimal
+        active_users_count:
+          type: integer
+        owner_department:
+          type: string
+          enum:
+          - Engineering
+          - Sales
+          - Marketing
+          - HR
+          - Finance
+          - Operations
+        status:
+          type: string
+          enum:
+          - active
+          - inactive
+          - trial
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        category_name:
+          type: string
