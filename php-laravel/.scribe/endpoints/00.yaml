@@ -1,0 +1,652 @@
+name: Endpoints
+description: ''
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/tools
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Display a listing of tools with optional filters.'
+      description: |-
+        Filters: department, status, category, min_cost, max_cost, search
+        Sorting: sort_by (name|monthly_cost|created_at), order (asc|desc)
+        Pagination: page, limit
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"id":78,"name":"Test Tool","description":"A test tool","vendor":"Test Vendor","category":"Communication","monthly_cost":10.5,"owner_department":"Engineering","status":"active","website_url":"https:\/\/example.com","active_users_count":0,"created_at":"2025-11-27T14:27:35.027642Z"},{"id":76,"name":"Test Tool Delete 1764251909068","description":null,"vendor":"Test Vendor","category":"Communication","monthly_cost":15,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":0,"created_at":"2025-11-27T13:58:29.068182Z"},{"id":69,"name":"Test Tool Delete 1764251797614","description":null,"vendor":"Test Vendor","category":"Communication","monthly_cost":15,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":0,"created_at":"2025-11-27T13:56:37.615230Z"},{"id":62,"name":"Test Tool Delete 1764251672234","description":null,"vendor":"Test Vendor","category":"Communication","monthly_cost":15,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":0,"created_at":"2025-11-27T13:54:32.235579Z"},{"id":55,"name":"Test Tool Delete 1764250175735","description":null,"vendor":"Test Vendor","category":"Communication","monthly_cost":15,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":0,"created_at":"2025-11-27T13:29:35.735377Z"},{"id":48,"name":"Test Tool Delete 1764250165312","description":null,"vendor":"Test Vendor","category":"Communication","monthly_cost":15,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":0,"created_at":"2025-11-27T13:29:25.324422Z"},{"id":41,"name":"Test Tool Delete 1764249099225","description":null,"vendor":"Test Vendor","category":"Communication","monthly_cost":15,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":0,"created_at":"2025-11-27T13:11:39.224805Z"},{"id":34,"name":"Test Tool Delete 1764249012441","description":null,"vendor":"Test Vendor","category":"Communication","monthly_cost":15,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":0,"created_at":"2025-11-27T13:10:12.442235Z"},{"id":87860,"name":"Test Figma Pro","description":"Design platform for testing","vendor":"Figma","category":"Test Design Tools 41941","monthly_cost":12,"owner_department":"Design","status":"active","website_url":null,"active_users_count":15,"created_at":"2025-11-27T12:56:19.225058Z"},{"id":58498,"name":"Test GitHub Enterprise","description":"Source code management for testing","vendor":"GitHub","category":"Test Development Tools 41106","monthly_cost":30,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":50,"created_at":"2025-11-27T12:56:19.095356Z"},{"id":58499,"name":"Test Figma Pro","description":"Design platform for testing","vendor":"Figma","category":"Test Design Tools 41106","monthly_cost":12,"owner_department":"Design","status":"active","website_url":null,"active_users_count":15,"created_at":"2025-11-27T12:56:19.095356Z"},{"id":16087,"name":"Test GitHub Enterprise","description":"Source code management for testing","vendor":"GitHub","category":"Test Development Tools 95353","monthly_cost":25,"owner_department":"Engineering","status":"trial","website_url":null,"active_users_count":50,"created_at":"2025-11-27T12:56:18.926756Z"},{"id":16088,"name":"Test Figma Pro","description":"Design platform for testing","vendor":"Figma","category":"Test Design Tools 95353","monthly_cost":12,"owner_department":"Design","status":"active","website_url":null,"active_users_count":15,"created_at":"2025-11-27T12:56:18.926756Z"},{"id":27,"name":"New Test Tool","description":"A tool created by tests","vendor":"Test Vendor","category":"Test Development Tools 43382","monthly_cost":99.99,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":0,"created_at":"2025-11-27T12:56:18.828458Z"},{"id":76514,"name":"Test Figma Pro","description":"Design platform for testing","vendor":"Figma","category":"Test Design Tools 89993","monthly_cost":12,"owner_department":"Design","status":"active","website_url":null,"active_users_count":15,"created_at":"2025-11-27T12:56:18.744052Z"},{"id":76513,"name":"Test GitHub Enterprise","description":"Source code management for testing","vendor":"GitHub","category":"Test Development Tools 89993","monthly_cost":21,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":50,"created_at":"2025-11-27T12:56:18.744052Z"},{"id":15719,"name":"Test Figma Pro","description":"Design platform for testing","vendor":"Figma","category":"Test Design Tools 57191","monthly_cost":12,"owner_department":"Design","status":"active","website_url":null,"active_users_count":15,"created_at":"2025-11-27T12:56:18.639579Z"},{"id":15718,"name":"Test GitHub Enterprise","description":"Source code management for testing","vendor":"GitHub","category":"Test Development Tools 57191","monthly_cost":21,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":50,"created_at":"2025-11-27T12:56:18.639579Z"},{"id":53366,"name":"Test Figma Pro","description":"Design platform for testing","vendor":"Figma","category":"Test Design Tools 26841","monthly_cost":12,"owner_department":"Design","status":"active","website_url":null,"active_users_count":15,"created_at":"2025-11-27T12:56:18.572896Z"},{"id":53365,"name":"Test GitHub Enterprise","description":"Source code management for testing","vendor":"GitHub","category":"Test Development Tools 26841","monthly_cost":21,"owner_department":"Engineering","status":"active","website_url":null,"active_users_count":50,"created_at":"2025-11-27T12:56:18.572896Z"}],"total":138,"filtered":138,"current_page":1,"last_page":7,"per_page":20,"filters_applied":[]}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/tools
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Store a newly created tool in storage.'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must be at least 2 characters. Must not be greater than 100 characters.'
+        required: true
+        example: vmqeopfuudtdsufvyvddq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      description:
+        custom: []
+        name: description
+        description: ''
+        required: false
+        example: 'Dolores dolorum amet iste laborum eius est dolor.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      vendor:
+        custom: []
+        name: vendor
+        description: 'Must not be greater than 100 characters.'
+        required: true
+        example: dtdsufvyvddqamniihfqc
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      website_url:
+        custom: []
+        name: website_url
+        description: 'Must be a valid URL. Must not be greater than 255 characters.'
+        required: false
+        example: 'http://www.weimann.com/perferendis-voluptatibus-incidunt-nostrum-quia-possimus.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      category_id:
+        custom: []
+        name: category_id
+        description: 'The <code>id</code> of an existing record in the categories table.'
+        required: true
+        example: 17
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      monthly_cost:
+        custom: []
+        name: monthly_cost
+        description: 'Must be at least 0.'
+        required: true
+        example: 45
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      active_users_count:
+        custom: []
+        name: active_users_count
+        description: 'Must be at least 0.'
+        required: false
+        example: 56
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      owner_department:
+        custom: []
+        name: owner_department
+        description: ''
+        required: true
+        example: Operations
+        type: string
+        enumValues:
+          - Engineering
+          - Sales
+          - Marketing
+          - HR
+          - Finance
+          - Operations
+          - Design
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      status:
+        custom: []
+        name: status
+        description: ''
+        required: false
+        example: deprecated
+        type: string
+        enumValues:
+          - active
+          - deprecated
+          - trial
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      name: vmqeopfuudtdsufvyvddq
+      description: 'Dolores dolorum amet iste laborum eius est dolor.'
+      vendor: dtdsufvyvddqamniihfqc
+      website_url: 'http://www.weimann.com/perferendis-voluptatibus-incidunt-nostrum-quia-possimus.html'
+      category_id: 17
+      monthly_cost: 45
+      active_users_count: 56
+      owner_department: Operations
+      status: deprecated
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/tools/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Display the specified tool with full details.'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the tool.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 2
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"id":2,"name":"Zoom","description":"Video conferencing and webinars","vendor":"Zoom Video Communications","website_url":"https:\/\/zoom.us","category":"Communication","monthly_cost":14.99,"owner_department":"Operations","status":"active","active_users_count":25,"total_monthly_cost":374.75,"created_at":"2025-11-27T11:14:00.756108Z","updated_at":"2025-11-27T11:14:00.756108Z"}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+      - PATCH
+    uri: 'api/tools/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Update the specified tool in storage.'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the tool.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 2
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must be at least 2 characters. Must not be greater than 100 characters.'
+        required: false
+        example: vmqeopfuudtdsufvyvddq
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      description:
+        custom: []
+        name: description
+        description: ''
+        required: false
+        example: 'Dolores dolorum amet iste laborum eius est dolor.'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      vendor:
+        custom: []
+        name: vendor
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: dtdsufvyvddqamniihfqc
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      website_url:
+        custom: []
+        name: website_url
+        description: 'Must be a valid URL. Must not be greater than 255 characters.'
+        required: false
+        example: 'http://www.weimann.com/perferendis-voluptatibus-incidunt-nostrum-quia-possimus.html'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      category_id:
+        custom: []
+        name: category_id
+        description: 'The <code>id</code> of an existing record in the categories table.'
+        required: false
+        example: 17
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      monthly_cost:
+        custom: []
+        name: monthly_cost
+        description: 'Must be at least 0.'
+        required: false
+        example: 45
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      active_users_count:
+        custom: []
+        name: active_users_count
+        description: 'Must be at least 0.'
+        required: false
+        example: 56
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      owner_department:
+        custom: []
+        name: owner_department
+        description: ''
+        required: false
+        example: Marketing
+        type: string
+        enumValues:
+          - Engineering
+          - Sales
+          - Marketing
+          - HR
+          - Finance
+          - Operations
+          - Design
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      status:
+        custom: []
+        name: status
+        description: ''
+        required: false
+        example: trial
+        type: string
+        enumValues:
+          - active
+          - deprecated
+          - trial
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: vmqeopfuudtdsufvyvddq
+      description: 'Dolores dolorum amet iste laborum eius est dolor.'
+      vendor: dtdsufvyvddqamniihfqc
+      website_url: 'http://www.weimann.com/perferendis-voluptatibus-incidunt-nostrum-quia-possimus.html'
+      category_id: 17
+      monthly_cost: 45
+      active_users_count: 56
+      owner_department: Marketing
+      status: trial
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - DELETE
+    uri: 'api/tools/{id}'
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Remove the specified tool from storage.'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      id:
+        custom: []
+        name: id
+        description: 'The ID of the tool.'
+        required: true
+        example: 2
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      id: 2
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/analytics/department-costs
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get cost breakdown by department'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"department":"Engineering","total_cost":1573.47,"tools_count":60,"total_users":2194,"average_cost_per_tool":26.22,"cost_percentage":55.8},{"department":"Design","total_cost":717,"tools_count":57,"total_users":829,"average_cost_per_tool":12.58,"cost_percentage":25.4},{"department":"Marketing","total_cost":227.98,"tools_count":5,"total_users":30,"average_cost_per_tool":45.6,"cost_percentage":8.1},{"department":"Operations","total_cost":124.97,"tools_count":6,"total_users":127,"average_cost_per_tool":20.83,"cost_percentage":4.4},{"department":"Finance","total_cost":95,"tools_count":2,"total_users":6,"average_cost_per_tool":47.5,"cost_percentage":3.4},{"department":"Sales","total_cost":75,"tools_count":1,"total_users":1,"average_cost_per_tool":75,"cost_percentage":2.7},{"department":"HR","total_cost":6.19,"tools_count":1,"total_users":3,"average_cost_per_tool":6.19,"cost_percentage":0.2}],"summary":{"total_company_cost":2819.61,"departments_count":7,"most_expensive_department":"Engineering"}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/analytics/expensive-tools
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get top expensive tools with efficiency analysis'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"id":21,"name":"Specialized Analytics Pro","monthly_cost":159.99,"active_users_count":1,"cost_per_user":159.99,"department":"Marketing","vendor":"DataCorp","efficiency_rating":"low"},{"id":20,"name":"AWS","monthly_cost":150,"active_users_count":2,"cost_per_user":75,"department":"Engineering","vendor":"Amazon Web Services","efficiency_rating":"low"},{"id":25,"name":"New Test Tool","monthly_cost":99.99,"active_users_count":0,"cost_per_user":99.99,"department":"Engineering","vendor":"Test Vendor","efficiency_rating":"low"},{"id":26,"name":"New Test Tool","monthly_cost":99.99,"active_users_count":0,"cost_per_user":99.99,"department":"Engineering","vendor":"Test Vendor","efficiency_rating":"low"},{"id":27,"name":"New Test Tool","monthly_cost":99.99,"active_users_count":0,"cost_per_user":99.99,"department":"Engineering","vendor":"Test Vendor","efficiency_rating":"low"},{"id":22,"name":"Enterprise Security Suite","monthly_cost":89.99,"active_users_count":2,"cost_per_user":45,"department":"Operations","vendor":"SecureCorp","efficiency_rating":"low"},{"id":24,"name":"Legacy CRM System","monthly_cost":75,"active_users_count":1,"cost_per_user":75,"department":"Sales","vendor":"OldTech","efficiency_rating":"low"},{"id":13,"name":"Tableau","monthly_cost":70,"active_users_count":3,"cost_per_user":23.33,"department":"Finance","vendor":"Salesforce","efficiency_rating":"low"},{"id":16,"name":"HubSpot","monthly_cost":45,"active_users_count":6,"cost_per_user":7.5,"department":"Marketing","vendor":"HubSpot Inc.","efficiency_rating":"low"},{"id":23,"name":"Premium Design Tools","monthly_cost":45,"active_users_count":0,"cost_per_user":45,"department":"Design","vendor":"DesignPro","efficiency_rating":"low"}],"analysis":{"total_tools_analyzed":132,"avg_cost_per_user_company":0.74,"potential_savings_identified":934.95}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/analytics/tools-by-category
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get tools distribution by category'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"category_name":"Analytics","tools_count":3,"total_cost":229.99,"total_users":16,"percentage_of_budget":8.2,"average_cost_per_user":14.37},{"category_name":"Infrastructure","tools_count":1,"total_cost":150,"total_users":2,"percentage_of_budget":5.3,"average_cost_per_user":75},{"category_name":"Communication","tools_count":9,"total_cost":130.49,"total_users":25,"percentage_of_budget":4.6,"average_cost_per_user":5.22},{"category_name":"Marketing","tools_count":3,"total_cost":130,"total_users":10,"percentage_of_budget":4.6,"average_cost_per_user":13},{"category_name":"Test Development Tools 63043","tools_count":1,"total_cost":99.99,"total_users":0,"percentage_of_budget":3.5,"average_cost_per_user":0},{"category_name":"Test Development Tools 43486","tools_count":1,"total_cost":99.99,"total_users":0,"percentage_of_budget":3.5,"average_cost_per_user":0},{"category_name":"Test Development Tools 43382","tools_count":1,"total_cost":99.99,"total_users":0,"percentage_of_budget":3.5,"average_cost_per_user":0},{"category_name":"Security","tools_count":3,"total_cost":95.98,"total_users":52,"percentage_of_budget":3.4,"average_cost_per_user":1.85},{"category_name":"Design","tools_count":3,"total_cost":69.99,"total_users":12,"percentage_of_budget":2.5,"average_cost_per_user":5.83},{"category_name":"Development","tools_count":5,"total_cost":51,"total_users":42,"percentage_of_budget":1.8,"average_cost_per_user":1.21},{"category_name":"Test Development Tools 10855","tools_count":1,"total_cost":30,"total_users":50,"percentage_of_budget":1.1,"average_cost_per_user":0.6},{"category_name":"Test Development Tools 11811","tools_count":1,"total_cost":30,"total_users":50,"percentage_of_budget":1.1,"average_cost_per_user":0.6},{"category_name":"Test Development Tools 32260","tools_count":1,"total_cost":30,"total_users":50,"percentage_of_budget":1.1,"average_cost_per_user":0.6},{"category_name":"Test Development Tools 41106","tools_count":1,"total_cost":30,"total_users":50,"percentage_of_budget":1.1,"average_cost_per_user":0.6},{"category_name":"Test Development Tools 35425","tools_count":1,"total_cost":30,"total_users":50,"percentage_of_budget":1.1,"average_cost_per_user":0.6},{"category_name":"Test Development Tools 10110","tools_count":1,"total_cost":30,"total_users":50,"percentage_of_budget":1.1,"average_cost_per_user":0.6},{"category_name":"Finance","tools_count":1,"total_cost":25,"total_users":3,"percentage_of_budget":0.9,"average_cost_per_user":8.33},{"category_name":"Test Development Tools 89432","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 61757","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 16835","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 89993","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 76374","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 57597","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 60410","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 26841","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 83615","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 87346","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 79820","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 22531","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 64532","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 10308","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 90771","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 48250","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 84083","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 85773","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 76581","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 14801","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 79969","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 14561","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 19460","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 84100","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 36896","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 95176","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 57191","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 12095","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 25542","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 95166","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 90892","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 55876","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 28765","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 66981","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 56395","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 62328","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Test Development Tools 65955","tools_count":1,"total_cost":21,"total_users":50,"percentage_of_budget":0.7,"average_cost_per_user":0.42},{"category_name":"Productivity","tools_count":2,"total_cost":14,"total_users":50,"percentage_of_budget":0.5,"average_cost_per_user":0.28},{"category_name":"Test Design Tools 55876","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 76581","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 84083","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 95166","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 89432","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 95176","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 57191","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 26841","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 35425","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 70236","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 87346","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 89993","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 41941","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 12095","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 83615","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 81819","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 60410","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 14561","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 65955","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 16835","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 90771","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 28765","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 84381","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 38302","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 84100","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 10308","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 24721","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 76374","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 79820","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 25542","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 24908","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 35245","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 41106","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 22531","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 95353","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 57597","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 62328","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 14801","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 61757","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 56395","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 90892","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 85773","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 79969","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 37104","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 10110","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 36896","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 19460","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 64532","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 32260","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 11811","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 10855","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 66981","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 75867","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 35645","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"Test Design Tools 48250","tools_count":1,"total_cost":12,"total_users":15,"percentage_of_budget":0.4,"average_cost_per_user":0.8},{"category_name":"HR","tools_count":1,"total_cost":6.19,"total_users":3,"percentage_of_budget":0.2,"average_cost_per_user":2.06}],"insights":{"most_expensive_category":"Analytics","most_efficient_category":"Productivity"}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/analytics/low-usage-tools
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get low usage tools with potential savings'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"id":21,"name":"Specialized Analytics Pro","monthly_cost":159.99,"active_users_count":1,"cost_per_user":159.99,"department":"Marketing","vendor":"DataCorp","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":20,"name":"AWS","monthly_cost":150,"active_users_count":2,"cost_per_user":75,"department":"Engineering","vendor":"Amazon Web Services","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":25,"name":"New Test Tool","monthly_cost":99.99,"active_users_count":0,"cost_per_user":99.99,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":26,"name":"New Test Tool","monthly_cost":99.99,"active_users_count":0,"cost_per_user":99.99,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":27,"name":"New Test Tool","monthly_cost":99.99,"active_users_count":0,"cost_per_user":99.99,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":22,"name":"Enterprise Security Suite","monthly_cost":89.99,"active_users_count":2,"cost_per_user":45,"department":"Operations","vendor":"SecureCorp","warning_level":"medium","potential_action":"Review usage and consider optimization"},{"id":24,"name":"Legacy CRM System","monthly_cost":75,"active_users_count":1,"cost_per_user":75,"department":"Sales","vendor":"OldTech","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":13,"name":"Tableau","monthly_cost":70,"active_users_count":3,"cost_per_user":23.33,"department":"Finance","vendor":"Salesforce","warning_level":"medium","potential_action":"Review usage and consider optimization"},{"id":23,"name":"Premium Design Tools","monthly_cost":45,"active_users_count":0,"cost_per_user":45,"department":"Design","vendor":"DesignPro","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":19,"name":"QuickBooks","monthly_cost":25,"active_users_count":3,"cost_per_user":8.33,"department":"Finance","vendor":"Intuit Inc.","warning_level":"low","potential_action":"Monitor usage trends"},{"id":48,"name":"Test Tool Delete 1764250165312","monthly_cost":15,"active_users_count":0,"cost_per_user":15,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":62,"name":"Test Tool Delete 1764251672234","monthly_cost":15,"active_users_count":0,"cost_per_user":15,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":76,"name":"Test Tool Delete 1764251909068","monthly_cost":15,"active_users_count":0,"cost_per_user":15,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":69,"name":"Test Tool Delete 1764251797614","monthly_cost":15,"active_users_count":0,"cost_per_user":15,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":34,"name":"Test Tool Delete 1764249012441","monthly_cost":15,"active_users_count":0,"cost_per_user":15,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":41,"name":"Test Tool Delete 1764249099225","monthly_cost":15,"active_users_count":0,"cost_per_user":15,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":55,"name":"Test Tool Delete 1764250175735","monthly_cost":15,"active_users_count":0,"cost_per_user":15,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":7,"name":"Postman","monthly_cost":12,"active_users_count":5,"cost_per_user":2.4,"department":"Engineering","vendor":"Postman Inc.","warning_level":"low","potential_action":"Monitor usage trends"},{"id":8,"name":"Figma","monthly_cost":12,"active_users_count":4,"cost_per_user":3,"department":"Design","vendor":"Figma Inc.","warning_level":"low","potential_action":"Monitor usage trends"},{"id":78,"name":"Test Tool","monthly_cost":10.5,"active_users_count":0,"cost_per_user":10.5,"department":"Engineering","vendor":"Test Vendor","warning_level":"high","potential_action":"Consider canceling or downgrading"},{"id":17,"name":"Mailchimp","monthly_cost":10,"active_users_count":3,"cost_per_user":3.33,"department":"Marketing","vendor":"Intuit Mailchimp","warning_level":"low","potential_action":"Monitor usage trends"},{"id":18,"name":"BambooHR","monthly_cost":6.19,"active_users_count":3,"cost_per_user":2.06,"department":"HR","vendor":"BambooHR LLC","warning_level":"low","potential_action":"Monitor usage trends"}],"savings_analysis":{"total_underutilized_tools":22,"potential_monthly_savings":1005.45,"potential_annual_savings":12065.400000000001}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/analytics/vendor-summary
+    metadata:
+      custom: []
+      groupName: Endpoints
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get vendor summary and analysis'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 200
+        content: '{"data":[{"vendor":"GitHub","tools_count":43,"total_monthly_cost":957,"total_users":2150,"departments":"Engineering","average_cost_per_user":0.45,"vendor_efficiency":"excellent"},{"vendor":"Figma","tools_count":55,"total_monthly_cost":660,"total_users":825,"departments":"Design","average_cost_per_user":0.8,"vendor_efficiency":"excellent"},{"vendor":"Test Vendor","tools_count":11,"total_monthly_cost":415.47,"total_users":0,"departments":"Engineering","average_cost_per_user":0,"vendor_efficiency":"excellent"},{"vendor":"DataCorp","tools_count":1,"total_monthly_cost":159.99,"total_users":1,"departments":"Marketing","average_cost_per_user":159.99,"vendor_efficiency":"poor"},{"vendor":"Amazon Web Services","tools_count":1,"total_monthly_cost":150,"total_users":2,"departments":"Engineering","average_cost_per_user":75,"vendor_efficiency":"poor"},{"vendor":"SecureCorp","tools_count":1,"total_monthly_cost":89.99,"total_users":2,"departments":"Operations","average_cost_per_user":45,"vendor_efficiency":"poor"},{"vendor":"OldTech","tools_count":1,"total_monthly_cost":75,"total_users":1,"departments":"Sales","average_cost_per_user":75,"vendor_efficiency":"poor"},{"vendor":"Salesforce","tools_count":1,"total_monthly_cost":70,"total_users":3,"departments":"Finance","average_cost_per_user":23.33,"vendor_efficiency":"average"},{"vendor":"HubSpot Inc.","tools_count":1,"total_monthly_cost":45,"total_users":6,"departments":"Marketing","average_cost_per_user":7.5,"vendor_efficiency":"good"},{"vendor":"DesignPro","tools_count":1,"total_monthly_cost":45,"total_users":0,"departments":"Design","average_cost_per_user":0,"vendor_efficiency":"excellent"},{"vendor":"Intuit Inc.","tools_count":1,"total_monthly_cost":25,"total_users":3,"departments":"Finance","average_cost_per_user":8.33,"vendor_efficiency":"good"},{"vendor":"GitHub Inc.","tools_count":1,"total_monthly_cost":21,"total_users":10,"departments":"Engineering","average_cost_per_user":2.1,"vendor_efficiency":"excellent"},{"vendor":"Zoom Video Communications","tools_count":1,"total_monthly_cost":14.99,"total_users":25,"departments":"Operations","average_cost_per_user":0.6,"vendor_efficiency":"excellent"},{"vendor":"Atlassian","tools_count":2,"total_monthly_cost":13,"total_users":20,"departments":"Engineering","average_cost_per_user":0.65,"vendor_efficiency":"excellent"},{"vendor":"Canva Pty Ltd.","tools_count":1,"total_monthly_cost":12.99,"total_users":8,"departments":"Marketing","average_cost_per_user":1.62,"vendor_efficiency":"excellent"},{"vendor":"Figma Inc.","tools_count":1,"total_monthly_cost":12,"total_users":4,"departments":"Design","average_cost_per_user":3,"vendor_efficiency":"excellent"},{"vendor":"Postman Inc.","tools_count":1,"total_monthly_cost":12,"total_users":5,"departments":"Engineering","average_cost_per_user":2.4,"vendor_efficiency":"excellent"},{"vendor":"Intuit Mailchimp","tools_count":1,"total_monthly_cost":10,"total_users":3,"departments":"Marketing","average_cost_per_user":3.33,"vendor_efficiency":"excellent"},{"vendor":"Notion Labs Inc.","tools_count":1,"total_monthly_cost":8,"total_users":25,"departments":"Operations","average_cost_per_user":0.32,"vendor_efficiency":"excellent"},{"vendor":"BambooHR LLC","tools_count":1,"total_monthly_cost":6.19,"total_users":3,"departments":"HR","average_cost_per_user":2.06,"vendor_efficiency":"excellent"},{"vendor":"Google LLC","tools_count":2,"total_monthly_cost":6,"total_users":37,"departments":"Marketing,Operations","average_cost_per_user":0.16,"vendor_efficiency":"excellent"},{"vendor":"Docker Inc.","tools_count":1,"total_monthly_cost":5,"total_users":7,"departments":"Engineering","average_cost_per_user":0.71,"vendor_efficiency":"excellent"},{"vendor":"1Password","tools_count":1,"total_monthly_cost":3.99,"total_users":25,"departments":"Operations","average_cost_per_user":0.16,"vendor_efficiency":"excellent"},{"vendor":"Okta Inc.","tools_count":1,"total_monthly_cost":2,"total_users":25,"departments":"Operations","average_cost_per_user":0.08,"vendor_efficiency":"excellent"}],"vendor_insights":{"most_expensive_vendor":"GitHub","most_efficient_vendor":"Okta Inc.","single_tool_vendors":19}}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
