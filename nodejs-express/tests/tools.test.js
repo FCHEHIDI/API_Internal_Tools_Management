@@ -20,16 +20,22 @@ describe('Tools CRUD Endpoints', () => {
   });
 
   describe('GET /api/tools', () => {
-    it('should return list of tools', async () => {
+    it('should return list of tools with proper structure', async () => {
       const response = await request(app)
         .get('/api/tools')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      if (response.body.length > 0) {
-        expect(response.body[0]).toHaveProperty('id');
-        expect(response.body[0]).toHaveProperty('name');
-        expect(response.body[0]).toHaveProperty('vendor');
+      expect(response.body).toHaveProperty('data');
+      expect(response.body).toHaveProperty('total');
+      expect(response.body).toHaveProperty('filtered');
+      expect(response.body).toHaveProperty('filters_applied');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(typeof response.body.total).toBe('number');
+      expect(typeof response.body.filtered).toBe('number');
+      if (response.body.data.length > 0) {
+        expect(response.body.data[0]).toHaveProperty('id');
+        expect(response.body.data[0]).toHaveProperty('name');
+        expect(response.body.data[0]).toHaveProperty('vendor');
       }
     });
 
@@ -38,8 +44,10 @@ describe('Tools CRUD Endpoints', () => {
         .get('/api/tools?status=active')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      response.body.forEach(tool => {
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.filters_applied).toHaveProperty('status', 'active');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      response.body.data.forEach(tool => {
         expect(tool.status).toBe('active');
       });
     });
@@ -49,8 +57,10 @@ describe('Tools CRUD Endpoints', () => {
         .get('/api/tools?vendor=GitHub')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      response.body.forEach(tool => {
+      expect(response.body).toHaveProperty('data');
+      expect(response.body.filters_applied).toHaveProperty('vendor', 'GitHub');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      response.body.data.forEach(tool => {
         expect(tool.vendor.toLowerCase()).toContain('github');
       });
     });
@@ -60,7 +70,8 @@ describe('Tools CRUD Endpoints', () => {
         .get('/api/tools?search=test')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
     });
 
     it('should support pagination with limit', async () => {
@@ -68,8 +79,9 @@ describe('Tools CRUD Endpoints', () => {
         .get('/api/tools?limit=5')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeLessThanOrEqual(5);
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBeLessThanOrEqual(5);
     });
 
     it('should support pagination with skip and limit', async () => {
@@ -77,8 +89,9 @@ describe('Tools CRUD Endpoints', () => {
         .get('/api/tools?skip=10&limit=5')
         .expect(200);
 
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeLessThanOrEqual(5);
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBeLessThanOrEqual(5);
     });
   });
 

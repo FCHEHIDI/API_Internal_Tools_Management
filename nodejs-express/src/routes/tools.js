@@ -18,42 +18,67 @@ router.get('/', asyncHandler(async (req, res) => {
     limit = 100,
   } = req.query;
 
-  let query = `
-    SELECT t.*, c.name as category
-    FROM tools t
-    LEFT JOIN categories c ON t.category_id = c.id
-    WHERE 1=1
-  `;
-  
+  // Build WHERE clause for filters
+  let whereClause = 'WHERE 1=1';
   const params = [];
   let paramCount = 1;
+  const filtersApplied = {};
 
   if (category_id) {
-    query += ` AND t.category_id = $${paramCount++}`;
+    whereClause += ` AND t.category_id = $${paramCount++}`;
     params.push(category_id);
+    filtersApplied.category_id = category_id;
   }
 
   if (status) {
-    query += ` AND t.status = $${paramCount++}`;
+    whereClause += ` AND t.status = $${paramCount++}`;
     params.push(status);
+    filtersApplied.status = status;
   }
 
   if (vendor) {
-    query += ` AND t.vendor ILIKE $${paramCount++}`;
+    whereClause += ` AND t.vendor ILIKE $${paramCount++}`;
     params.push(`%${vendor}%`);
+    filtersApplied.vendor = vendor;
   }
 
   if (search) {
-    query += ` AND (t.name ILIKE $${paramCount++} OR t.description ILIKE $${paramCount})`;
+    whereClause += ` AND (t.name ILIKE $${paramCount++} OR t.description ILIKE $${paramCount})`;
     params.push(`%${search}%`, `%${search}%`);
     paramCount++;
+    filtersApplied.search = search;
   }
 
-  query += ` ORDER BY t.created_at DESC LIMIT $${paramCount++} OFFSET $${paramCount}`;
+  // Get total count (all records without filters)
+  const totalResult = await pool.query('SELECT COUNT(*) FROM tools');
+  const total = parseInt(totalResult.rows[0].count);
+
+  // Get filtered count (records matching filters)
+  const filteredResult = await pool.query(
+    `SELECT COUNT(*) FROM tools t ${whereClause}`,
+    params
+  );
+  const filtered = parseInt(filteredResult.rows[0].count);
+
+  // Get paginated data
+  const dataQuery = `
+    SELECT t.*, c.name as category
+    FROM tools t
+    LEFT JOIN categories c ON t.category_id = c.id
+    ${whereClause}
+    ORDER BY t.created_at DESC 
+    LIMIT $${paramCount++} OFFSET $${paramCount}
+  `;
   params.push(limit, skip);
 
-  const result = await pool.query(query, params);
-  res.json(result.rows);
+  const result = await pool.query(dataQuery, params);
+
+  res.json({
+    data: result.rows,
+    total,
+    filtered,
+    filters_applied: filtersApplied
+  });
 }));
 
 // GET /api/tools/:id - Get tool by ID
