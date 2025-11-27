@@ -7,8 +7,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --verbose",
-    "test:watch": "NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage --verbose",
+    "test:watch": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:quick": "cross-env NODE_ENV=test node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "db:migrate": "node src/database/migrate.js",
     "db:seed": "node src/database/seed.js",
     "lint": "eslint src/**/*.js",
@@ -23,21 +24,22 @@
   "author": "FCHEHIDI",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.19.2",
-    "pg": "^8.12.0",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
     "dotenv": "^16.4.5",
+    "express": "^4.19.2",
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
-    "cors": "^2.8.5",
     "morgan": "^1.10.0",
-    "compression": "^1.7.4"
+    "pg": "^8.12.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4",
-    "jest": "^29.7.0",
-    "supertest": "^7.0.0",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.0",
-    "prettier": "^3.3.3"
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.4",
+    "prettier": "^3.3.3",
+    "supertest": "^7.0.0"
   },
   "engines": {
     "node": ">=18.0.0",
