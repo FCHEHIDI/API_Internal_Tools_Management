@@ -1,0 +1,27 @@
+[
+  {
+    "department": "Engineering",
+    "total_cost": 15420.50,
+    "user_count": 45
+  },
+  {
+    "department": "Design",
+    "total_cost": 8750.25,
+    "user_count": 18
+  },
+  {
+    "department": "Product",
+    "total_cost": 6890.00,
+    "user_count": 22
+  },
+  {
+    "department": "Marketing",
+    "total_cost": 4560.75,
+    "user_count": 15
+  },
+  {
+    "department": "Sales",
+    "total_cost": 3240.00,
+    "user_count": 12
+  }
+]

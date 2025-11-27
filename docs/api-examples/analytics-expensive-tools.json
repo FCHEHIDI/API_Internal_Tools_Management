@@ -1,0 +1,82 @@
+[
+  {
+    "id": 15,
+    "name": "Adobe Creative Cloud All Apps",
+    "vendor": "Adobe",
+    "monthly_cost": 89.99,
+    "active_users_count": 12,
+    "category_name": "Design Tools"
+  },
+  {
+    "id": 8,
+    "name": "DataDog Enterprise",
+    "vendor": "DataDog",
+    "monthly_cost": 69.0,
+    "active_users_count": 25,
+    "category_name": "Monitoring"
+  },
+  {
+    "id": 20,
+    "name": "Salesforce Professional",
+    "vendor": "Salesforce",
+    "monthly_cost": 65.0,
+    "active_users_count": 30,
+    "category_name": "CRM"
+  },
+  {
+    "id": 12,
+    "name": "JetBrains All Products",
+    "vendor": "JetBrains",
+    "monthly_cost": 59.9,
+    "active_users_count": 40,
+    "category_name": "Development Tools"
+  },
+  {
+    "id": 5,
+    "name": "Postman Enterprise",
+    "vendor": "Postman",
+    "monthly_cost": 29.0,
+    "active_users_count": 35,
+    "category_name": "Development Tools"
+  },
+  {
+    "id": 1,
+    "name": "GitHub Enterprise",
+    "vendor": "GitHub",
+    "monthly_cost": 21.0,
+    "active_users_count": 50,
+    "category_name": "Development Tools"
+  },
+  {
+    "id": 16,
+    "name": "Zoom Business",
+    "vendor": "Zoom",
+    "monthly_cost": 19.99,
+    "active_users_count": 60,
+    "category_name": "Communication"
+  },
+  {
+    "id": 10,
+    "name": "Notion Team",
+    "vendor": "Notion",
+    "monthly_cost": 15.0,
+    "active_users_count": 50,
+    "category_name": "Productivity"
+  },
+  {
+    "id": 4,
+    "name": "Slack Business+",
+    "vendor": "Slack",
+    "monthly_cost": 12.5,
+    "active_users_count": 75,
+    "category_name": "Communication"
+  },
+  {
+    "id": 2,
+    "name": "Figma Professional",
+    "vendor": "Figma",
+    "monthly_cost": 12.0,
+    "active_users_count": 15,
+    "category_name": "Design Tools"
+  }
+]

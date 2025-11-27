@@ -70,7 +70,13 @@ async def list_tools(
     result = await db.execute(query)
     tools = result.scalars().all()
     
-    return tools
+    # Transform tools to include category name
+    return [
+        ToolResponse(
+            **{**tool.__dict__, "category": tool.category.name if tool.category else None}
+        )
+        for tool in tools
+    ]
 
 
 @router.get(
@@ -107,7 +113,9 @@ async def get_tool(
             detail=f"Tool with ID {tool_id} not found",
         )
     
-    return tool
+    return ToolResponse(
+        **{**tool.__dict__, "category": tool.category.name if tool.category else None}
+    )
 
 
 @router.post(
@@ -155,7 +163,7 @@ async def create_tool(
     # Load category relationship
     await db.refresh(new_tool, ["category"])
     
-    return new_tool
+    return ToolResponse(**{**new_tool.__dict__, "category": new_tool.category.name if new_tool.category else None})
 
 
 @router.put(
@@ -218,7 +226,7 @@ async def update_tool(
     # Load category relationship
     await db.refresh(tool, ["category"])
     
-    return tool
+    return ToolResponse(**{**tool.__dict__, "category": tool.category.name if tool.category else None})
 
 
 @router.delete(

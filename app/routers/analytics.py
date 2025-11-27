@@ -49,20 +49,13 @@ async def get_department_costs(
     # Build query to aggregate costs by department
     query = (
         select(
-            User.department.label("department"),
-            func.sum(CostTracking.amount).label("total_cost"),
-            func.count(func.distinct(User.id)).label("user_count"),
+            Tool.owner_department.label("department"),
+            func.sum(Tool.monthly_cost).label("total_cost"),
+            func.count(Tool.id).label("tool_count"),
         )
-        .select_from(CostTracking)
-        .join(Tool, CostTracking.tool_id == Tool.id)
-        .join(User, CostTracking.user_id == User.id)
-        .where(
-            and_(
-                extract("year", CostTracking.period_start) == year,
-                extract("month", CostTracking.period_start) == month,
-            )
-        )
-        .group_by(User.department)
+        .select_from(Tool)
+        .where(Tool.status == "active")
+        .group_by(Tool.owner_department)
         .order_by(desc("total_cost"))
     )
     
@@ -73,7 +66,7 @@ async def get_department_costs(
         DepartmentCostResponse(
             department=row.department,
             total_cost=float(row.total_cost),
-            user_count=row.user_count,
+            tool_count=row.tool_count,
         )
         for row in rows
     ]
@@ -162,12 +155,12 @@ async def get_tools_by_category(
             Category.id,
             Category.name,
             func.count(Tool.id).label("tool_count"),
-            func.sum(Tool.monthly_cost).label("total_monthly_cost"),
+            func.coalesce(func.sum(Tool.monthly_cost), 0).label("total_monthly_cost"),
         )
         .select_from(Category)
         .outerjoin(Tool, Category.id == Tool.category_id)
         .group_by(Category.id, Category.name)
-        .order_by(desc("total_monthly_cost"))
+        .order_by(desc(func.coalesce(func.sum(Tool.monthly_cost), 0)))
     )
     
     result = await db.execute(query)
@@ -220,8 +213,8 @@ async def get_low_usage_tools(
         )
         .where(
             and_(
-                extract("year", UsageLog.access_timestamp) == year,
-                extract("month", UsageLog.access_timestamp) == month,
+                extract("year", UsageLog.session_date) == year,
+                extract("month", UsageLog.session_date) == month,
             )
         )
         .group_by(UsageLog.tool_id)

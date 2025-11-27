@@ -41,7 +41,7 @@ class ToolResponse(ToolBase):
     id: int
     status: ToolStatusType
     active_users_count: int
-    category: str  # Category name
+    category: Optional[str] = None  # Category name
     total_monthly_cost: Optional[Decimal] = None
     created_at: datetime
     updated_at: datetime

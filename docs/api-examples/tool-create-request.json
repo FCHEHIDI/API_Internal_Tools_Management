@@ -1,0 +1,8 @@
+{
+  "name": "New Tool Name",
+  "description": "Detailed description of the tool and its features",
+  "vendor": "Vendor Name",
+  "monthly_cost": 99.99,
+  "status": "active",
+  "category_id": 1
+}

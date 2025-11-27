@@ -9,7 +9,7 @@ class DepartmentCostResponse(BaseModel):
     """Department cost response."""
     department: str
     total_cost: float
-    user_count: int
+    tool_count: int
 
 
 class ExpensiveToolResponse(BaseModel):

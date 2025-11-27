@@ -1,0 +1,47 @@
+[
+  {
+    "id": 15,
+    "name": "Adobe Creative Cloud All Apps",
+    "vendor": "Adobe",
+    "monthly_cost": 89.99,
+    "active_users_count": 12,
+    "usage_count": 3,
+    "cost_per_usage": 29.996666666666666
+  },
+  {
+    "id": 22,
+    "name": "Zendesk Support",
+    "vendor": "Zendesk",
+    "monthly_cost": 49.0,
+    "active_users_count": 8,
+    "usage_count": 2,
+    "cost_per_usage": 24.5
+  },
+  {
+    "id": 18,
+    "name": "Asana Business",
+    "vendor": "Asana",
+    "monthly_cost": 24.99,
+    "active_users_count": 20,
+    "usage_count": 4,
+    "cost_per_usage": 6.2475
+  },
+  {
+    "id": 11,
+    "name": "InVision Enterprise",
+    "vendor": "InVision",
+    "monthly_cost": 15.0,
+    "active_users_count": 10,
+    "usage_count": 1,
+    "cost_per_usage": 15.0
+  },
+  {
+    "id": 24,
+    "name": "Miro Team",
+    "vendor": "Miro",
+    "monthly_cost": 10.0,
+    "active_users_count": 15,
+    "usage_count": 0,
+    "cost_per_usage": null
+  }
+]

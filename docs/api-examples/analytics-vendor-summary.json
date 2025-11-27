@@ -1,0 +1,58 @@
+[
+  {
+    "vendor": "Adobe",
+    "tool_count": 2,
+    "total_monthly_cost": 119.98,
+    "total_users": 25,
+    "average_cost_per_tool": 59.99
+  },
+  {
+    "vendor": "Atlassian",
+    "tool_count": 3,
+    "total_monthly_cost": 49.0,
+    "total_users": 55,
+    "average_cost_per_tool": 16.333333333333332
+  },
+  {
+    "vendor": "GitHub",
+    "tool_count": 1,
+    "total_monthly_cost": 21.0,
+    "total_users": 50,
+    "average_cost_per_tool": 21.0
+  },
+  {
+    "vendor": "Slack",
+    "tool_count": 1,
+    "total_monthly_cost": 12.5,
+    "total_users": 75,
+    "average_cost_per_tool": 12.5
+  },
+  {
+    "vendor": "JetBrains",
+    "tool_count": 2,
+    "total_monthly_cost": 89.9,
+    "total_users": 65,
+    "average_cost_per_tool": 44.95
+  },
+  {
+    "vendor": "Microsoft",
+    "tool_count": 3,
+    "total_monthly_cost": 62.0,
+    "total_users": 90,
+    "average_cost_per_tool": 20.666666666666668
+  },
+  {
+    "vendor": "Figma",
+    "tool_count": 1,
+    "total_monthly_cost": 12.0,
+    "total_users": 15,
+    "average_cost_per_tool": 12.0
+  },
+  {
+    "vendor": "DataDog",
+    "tool_count": 1,
+    "total_monthly_cost": 69.0,
+    "total_users": 25,
+    "average_cost_per_tool": 69.0
+  }
+]

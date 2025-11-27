@@ -1,0 +1,289 @@
+{
+  "info": {
+    "name": "Internal Tools Management API",
+    "description": "Complete API collection for managing internal tools, users, and analytics",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Check API and database connectivity status"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tools",
+      "item": [
+        {
+          "name": "List All Tools",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tools",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tools"]
+            },
+            "description": "Get list of all tools"
+          },
+          "response": []
+        },
+        {
+          "name": "List Tools - Filtered",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tools?status=active&category_id=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tools"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Filter by status: active, inactive, trial"
+                },
+                {
+                  "key": "category_id",
+                  "value": "1",
+                  "description": "Filter by category ID"
+                },
+                {
+                  "key": "vendor",
+                  "value": "GitHub",
+                  "disabled": true,
+                  "description": "Filter by vendor name"
+                },
+                {
+                  "key": "search",
+                  "value": "design",
+                  "disabled": true,
+                  "description": "Search in name and description"
+                },
+                {
+                  "key": "skip",
+                  "value": "0",
+                  "disabled": true,
+                  "description": "Pagination offset"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Max results (default: 100, max: 500)"
+                }
+              ]
+            },
+            "description": "Get filtered list of tools with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tool by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tools/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tools", "1"]
+            },
+            "description": "Get a specific tool by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Tool",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Tool Name\",\n  \"description\": \"Detailed description of the tool\",\n  \"vendor\": \"Vendor Name\",\n  \"monthly_cost\": 99.99,\n  \"status\": \"active\",\n  \"category_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tools",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tools"]
+            },
+            "description": "Create a new tool"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tool",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"monthly_cost\": 149.99,\n  \"status\": \"trial\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/tools/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tools", "1"]
+            },
+            "description": "Update an existing tool (partial update supported)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tool",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/tools/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "tools", "1"]
+            },
+            "description": "Delete a tool"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Department Costs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/department-costs?year=2024&month=11",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "department-costs"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "description": "Year for cost analysis (2020-2100)"
+                },
+                {
+                  "key": "month",
+                  "value": "11",
+                  "description": "Month for cost analysis (1-12)"
+                }
+              ]
+            },
+            "description": "Get total tool costs aggregated by department"
+          },
+          "response": []
+        },
+        {
+          "name": "Expensive Tools",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/expensive-tools?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "expensive-tools"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of tools to return (default: 10, max: 100)"
+                }
+              ]
+            },
+            "description": "Get the top N most expensive tools by monthly cost"
+          },
+          "response": []
+        },
+        {
+          "name": "Tools by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/tools-by-category",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "tools-by-category"]
+            },
+            "description": "Get tool distribution and costs across categories"
+          },
+          "response": []
+        },
+        {
+          "name": "Low Usage Tools",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/low-usage-tools?year=2024&month=11&threshold=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "low-usage-tools"],
+              "query": [
+                {
+                  "key": "year",
+                  "value": "2024",
+                  "description": "Year for usage analysis"
+                },
+                {
+                  "key": "month",
+                  "value": "11",
+                  "description": "Month for usage analysis (1-12)"
+                },
+                {
+                  "key": "threshold",
+                  "value": "5",
+                  "description": "Maximum usage count threshold (default: 5, max: 100)"
+                }
+              ]
+            },
+            "description": "Identify tools with low usage for cost optimization"
+          },
+          "response": []
+        },
+        {
+          "name": "Vendor Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/analytics/vendor-summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "analytics", "vendor-summary"]
+            },
+            "description": "Get total spending and tool count by vendor"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000",
+      "type": "string"
+    }
+  ]
+}

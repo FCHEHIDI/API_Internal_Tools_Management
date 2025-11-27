@@ -1,0 +1,32 @@
+[
+  {
+    "category_id": 1,
+    "category_name": "Development Tools",
+    "tool_count": 8,
+    "total_monthly_cost": 245.90
+  },
+  {
+    "category_id": 2,
+    "category_name": "Design Tools",
+    "tool_count": 4,
+    "total_monthly_cost": 156.99
+  },
+  {
+    "category_id": 4,
+    "category_name": "Communication",
+    "tool_count": 5,
+    "total_monthly_cost": 87.49
+  },
+  {
+    "category_id": 5,
+    "category_name": "Monitoring",
+    "tool_count": 3,
+    "total_monthly_cost": 149.00
+  },
+  {
+    "category_id": 3,
+    "category_name": "Project Management",
+    "tool_count": 4,
+    "total_monthly_cost": 42.00
+  }
+]

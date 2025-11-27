@@ -1,0 +1,87 @@
+[
+  {
+    "id": 1,
+    "name": "GitHub Enterprise",
+    "description": "Enterprise-grade source code management and collaboration platform with advanced security features",
+    "vendor": "GitHub",
+    "monthly_cost": 21.0,
+    "status": "active",
+    "category_id": 1,
+    "active_users_count": 50,
+    "created_at": "2024-01-15T09:00:00",
+    "updated_at": "2024-11-20T14:30:00",
+    "category": {
+      "id": 1,
+      "name": "Development Tools",
+      "description": "Tools for software development and version control"
+    }
+  },
+  {
+    "id": 2,
+    "name": "Figma Professional",
+    "description": "Collaborative interface design tool with real-time collaboration and prototyping",
+    "vendor": "Figma",
+    "monthly_cost": 12.0,
+    "status": "active",
+    "category_id": 2,
+    "active_users_count": 15,
+    "created_at": "2024-02-01T10:00:00",
+    "updated_at": "2024-11-22T11:15:00",
+    "category": {
+      "id": 2,
+      "name": "Design Tools",
+      "description": "Tools for UI/UX design and prototyping"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Jira Software",
+    "description": "Agile project management and issue tracking for software teams",
+    "vendor": "Atlassian",
+    "monthly_cost": 7.0,
+    "status": "trial",
+    "category_id": 3,
+    "active_users_count": 30,
+    "created_at": "2024-10-15T08:00:00",
+    "updated_at": "2024-11-25T16:45:00",
+    "category": {
+      "id": 3,
+      "name": "Project Management",
+      "description": "Tools for project planning and task management"
+    }
+  },
+  {
+    "id": 4,
+    "name": "Slack Business+",
+    "description": "Team communication and collaboration platform with enterprise features",
+    "vendor": "Slack",
+    "monthly_cost": 12.5,
+    "status": "active",
+    "category_id": 4,
+    "active_users_count": 75,
+    "created_at": "2024-01-10T09:30:00",
+    "updated_at": "2024-11-26T09:00:00",
+    "category": {
+      "id": 4,
+      "name": "Communication",
+      "description": "Tools for team communication and messaging"
+    }
+  },
+  {
+    "id": 5,
+    "name": "Postman Enterprise",
+    "description": "API development and testing platform with team collaboration",
+    "vendor": "Postman",
+    "monthly_cost": 29.0,
+    "status": "active",
+    "category_id": 1,
+    "active_users_count": 35,
+    "created_at": "2024-03-01T10:00:00",
+    "updated_at": "2024-11-23T13:20:00",
+    "category": {
+      "id": 1,
+      "name": "Development Tools",
+      "description": "Tools for software development and version control"
+    }
+  }
+]

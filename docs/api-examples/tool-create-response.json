@@ -1,0 +1,17 @@
+{
+  "id": 25,
+  "name": "New Tool Name",
+  "description": "Detailed description of the tool and its features",
+  "vendor": "Vendor Name",
+  "monthly_cost": 99.99,
+  "status": "active",
+  "category_id": 1,
+  "active_users_count": 0,
+  "created_at": "2024-11-27T10:35:22.123456",
+  "updated_at": "2024-11-27T10:35:22.123456",
+  "category": {
+    "id": 1,
+    "name": "Development Tools",
+    "description": "Tools for software development and version control"
+  }
+}
