@@ -27,14 +27,23 @@ async function bootstrap() {
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Internal Tools Management API')
-    .setDescription('API for managing internal SaaS tools')
+    .setDescription('API for managing internal SaaS tools - TypeScript/NestJS Implementation')
     .setVersion('1.0')
-    .addTag('tools')
-    .addTag('analytics')
-    .addTag('health')
+    .addTag('tools', 'Tools CRUD operations')
+    .addTag('analytics', 'Analytics and reporting endpoints')
+    .addTag('health', 'Health check endpoint')
     .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  const document = SwaggerModule.createDocument(app, config, {
+    extraModels: [], // Ensures all DTOs are included in schema
+  });
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+      docExpansion: 'list',
+      filter: true,
+      showRequestDuration: true,
+    },
+  });
 
   const port = process.env.PORT || 8000;
   await app.listen(port);

@@ -17,6 +17,7 @@ import { CreateToolDto } from './dto/create-tool.dto';
 import { UpdateToolDto } from './dto/update-tool.dto';
 import { FilterToolsDto } from './dto/filter-tools.dto';
 import { Tool } from './entities/tool.entity';
+import { ToolsListResponseDto } from './dto/response.dto';
 
 @ApiTags('tools')
 @Controller('tools')
@@ -25,8 +26,12 @@ export class ToolsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all tools with filters' })
-  @ApiResponse({ status: 200, description: 'List of tools retrieved' })
-  findAll(@Query() filterDto: FilterToolsDto) {
+  @ApiResponse({
+    status: 200,
+    description: 'List of tools retrieved',
+    type: ToolsListResponseDto,
+  })
+  findAll(@Query() filterDto: FilterToolsDto): Promise<ToolsListResponseDto> {
     return this.toolsService.findAll(filterDto);
   }
 
@@ -34,7 +39,7 @@ export class ToolsController {
   @ApiOperation({ summary: 'Get tool by ID' })
   @ApiResponse({ status: 200, description: 'Tool found', type: Tool })
   @ApiResponse({ status: 404, description: 'Tool not found' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<Tool> {
     return this.toolsService.findOne(id);
   }
 
@@ -43,7 +48,7 @@ export class ToolsController {
   @ApiOperation({ summary: 'Create new tool' })
   @ApiResponse({ status: 201, description: 'Tool created', type: Tool })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  create(@Body() createToolDto: CreateToolDto) {
+  create(@Body() createToolDto: CreateToolDto): Promise<Tool> {
     return this.toolsService.create(createToolDto);
   }
 
@@ -54,7 +59,7 @@ export class ToolsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateToolDto: UpdateToolDto,
-  ) {
+  ): Promise<Tool> {
     return this.toolsService.update(id, updateToolDto);
   }
 
@@ -63,7 +68,7 @@ export class ToolsController {
   @ApiOperation({ summary: 'Delete tool' })
   @ApiResponse({ status: 204, description: 'Tool deleted' })
   @ApiResponse({ status: 404, description: 'Tool not found' })
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.toolsService.remove(id);
   }
 }
