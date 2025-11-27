@@ -7,10 +7,10 @@ from app.schemas.tool import (
     ToolDetailResponse,
 )
 from app.schemas.analytics import (
-    DepartmentCostsResponse,
-    ExpensiveToolsResponse,
+    DepartmentCostResponse,
+    ExpensiveToolResponse,
     ToolsByCategoryResponse,
-    LowUsageToolsResponse,
+    LowUsageToolResponse,
     VendorSummaryResponse,
 )
 
@@ -20,9 +20,9 @@ __all__ = [
     "ToolResponse",
     "ToolListResponse",
     "ToolDetailResponse",
-    "DepartmentCostsResponse",
-    "ExpensiveToolsResponse",
+    "DepartmentCostResponse",
+    "ExpensiveToolResponse",
     "ToolsByCategoryResponse",
-    "LowUsageToolsResponse",
+    "LowUsageToolResponse",
     "VendorSummaryResponse",
 ]

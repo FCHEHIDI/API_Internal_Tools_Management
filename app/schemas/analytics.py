@@ -4,6 +4,53 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+# Simple response models for analytics endpoints
+class DepartmentCostResponse(BaseModel):
+    """Department cost response."""
+    department: str
+    total_cost: float
+    user_count: int
+
+
+class ExpensiveToolResponse(BaseModel):
+    """Expensive tool response."""
+    id: int
+    name: str
+    vendor: str
+    monthly_cost: float
+    active_users_count: int
+    category_name: Optional[str] = None
+
+
+class ToolsByCategoryResponse(BaseModel):
+    """Tools by category response."""
+    category_id: int
+    category_name: str
+    tool_count: int
+    total_monthly_cost: float
+
+
+class LowUsageToolResponse(BaseModel):
+    """Low usage tool response."""
+    id: int
+    name: str
+    vendor: str
+    monthly_cost: float
+    active_users_count: int
+    usage_count: int
+    cost_per_usage: Optional[float] = None
+
+
+class VendorSummaryResponse(BaseModel):
+    """Vendor summary response."""
+    vendor: str
+    tool_count: int
+    total_monthly_cost: float
+    total_users: int
+    average_cost_per_tool: float
+
+
+# Extended response models for future enhancements
 # Department Costs Analytics
 class DepartmentCostItem(BaseModel):
     """Department cost item."""
@@ -71,7 +118,7 @@ class CategoryInsights(BaseModel):
     most_efficient_category: str
 
 
-class ToolsByCategoryResponse(BaseModel):
+class ToolsByCategoryResponseExtended(BaseModel):
     """Tools by category response."""
     data: List[CategoryItem]
     insights: CategoryInsights
@@ -98,7 +145,7 @@ class SavingsAnalysis(BaseModel):
     potential_annual_savings: Decimal = Field(..., decimal_places=2)
 
 
-class LowUsageToolsResponse(BaseModel):
+class LowUsageToolsResponseExtended(BaseModel):
     """Low usage tools response."""
     data: List[LowUsageToolItem]
     savings_analysis: SavingsAnalysis
@@ -123,7 +170,7 @@ class VendorInsights(BaseModel):
     single_tool_vendors: int
 
 
-class VendorSummaryResponse(BaseModel):
+class VendorSummaryResponseExtended(BaseModel):
     """Vendor summary response."""
     data: List[VendorItem]
     vendor_insights: VendorInsights
