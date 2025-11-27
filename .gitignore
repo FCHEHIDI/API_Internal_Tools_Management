@@ -1,0 +1,230 @@
+# =============================================
+# COMMON IGNORES (All Branches)
+# =============================================
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker volumes (keep docker-compose.yml)
+postgres_data/
+mysql_data/
+pgadmin_data/
+
+# =============================================
+# PYTHON (feature/python-fastapi)
+# =============================================
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pydantic
+.pydantic_cache/
+
+# =============================================
+# RUST (feature/rust-axum)
+# =============================================
+
+# Cargo
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# =============================================
+# NODE.JS / TYPESCRIPT (feature/typescript-nestjs)
+# =============================================
+
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Build
+dist/
+build/
+out/
+.next/
+
+# Testing
+coverage/
+.nyc_output
+
+# Misc
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+
+# Prisma
+prisma/.env
+prisma/migrations/
+
+# =============================================
+# .NET / C# (feature/csharp-dotnet)
+# =============================================
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# NuGet
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# =============================================
+# GO (feature/golang-gin)
+# =============================================
+
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Vendor
+vendor/
+
+# =============================================
+# DOCUMENTATION
+# =============================================
+
+# Temporary docs
+*.tmp
+*.bak
+*~
+
+# Generated API docs (keep source)
+docs/generated/
+api-docs/
+
+# =============================================
+# SECURITY
+# =============================================
+
+# Secrets
+*.pem
+*.key
+*.cert
+secrets/
+credentials/
+
+# =============================================
+# OS SPECIFIC
+# =============================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Linux
+*~
+.directory
+.Trash-*

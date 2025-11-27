@@ -1,0 +1,27 @@
+app/
+├── api/
+│   ├── v1/
+│   │   ├── endpoints/
+│   │   │   ├── tools.py
+│   │   │   └── analytics.py
+│   │   └── router.py
+├── core/
+│   ├── config.py
+│   ├── database.py
+│   └── dependencies.py
+├── models/
+│   ├── tool.py
+│   ├── category.py
+│   └── user.py
+├── schemas/
+│   ├── tool.py
+│   └── analytics.py
+├── services/
+│   ├── tool_service.py
+│   └── analytics_service.py
+└── main.py
+
+tests/
+├── test_tools.py
+├── test_analytics.py
+└── conftest.py
