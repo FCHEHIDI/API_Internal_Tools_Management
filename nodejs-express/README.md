@@ -1,5 +1,9 @@
 # Internal Tools Management API - Node.js/Express
 
+> **Branch**: `feature/nodejs-express`  
+> **Location**: `nodejs-express/` directory  
+> This branch contains ONLY the Node.js/Express implementation.
+
 ## Technology Stack
 
 - **Runtime**: Node.js v22+
@@ -11,13 +15,21 @@
 
 ## Quick Start
 
-### 1. Start Database
+### 1. Navigate to Node.js directory
 
 ```bash
-docker-compose --profile postgres up -d
+cd nodejs-express
 ```
 
-### 2. Install Dependencies
+### 2. Start Database (from root)
+
+```bash
+cd ..
+docker-compose --profile postgres up -d
+cd nodejs-express
+```
+
+### 3. Install Dependencies
 
 ```bash
 npm install

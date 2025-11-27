@@ -16,17 +16,36 @@ A comprehensive API solution for internal SaaS tools management, implemented in 
 
 ---
 
-## 🌳 Repository Structure
+## 🌳 Repository Structure - Multi-Branch Strategy
 
-This repository contains **5 parallel implementations** of the same API specification:
+This repository uses a **multi-branch strategy** where each technology stack is:
+- ✅ **Isolated in its own branch** for clean separation
+- ✅ **Contained in a dedicated directory** for easy navigation
+- ✅ **Independently testable** without interference from other stacks
+- ✅ **Easy to review** - just checkout the branch you want to test
 
-| Branch | Technology Stack | Use Case | Status |
-|--------|-----------------|----------|--------|
-| `feature/python-fastapi` | Python 3.11 + FastAPI + SQLAlchemy | **Recommended for rapid development** | 🚧 Setup |
-| `feature/rust-axum` | Rust 1.75 + Axum + SQLx | **Best for high-performance production** | 🚧 Setup |
-| `feature/typescript-nestjs` | Node.js + NestJS + Prisma | **Enterprise-grade TypeScript** | 🚧 Setup |
-| `feature/csharp-dotnet` | .NET 8 LTS + ASP.NET Core + EF Core | **Corporate environments** | 🚧 Setup |
-| `feature/golang-gin` | Go 1.21 + Gin + GORM | **Cloud-native microservices** | 🚧 Setup |
+### How to Navigate Stacks
+
+```bash
+# Example: Test Python implementation
+git checkout feature/python-fastapi
+cd python-fastapi/
+# Follow README.md in that directory
+
+# Example: Test Node.js implementation
+git checkout feature/nodejs-express
+cd nodejs-express/
+# Follow README.md in that directory
+```
+
+| Branch | Technology Stack | Directory | Status |
+|--------|-----------------|-----------|--------|
+| `feature/python-fastapi` | Python 3.11 + FastAPI + SQLAlchemy | `python-fastapi/` | ✅ Complete |
+| `feature/nodejs-express` | Node.js + Express.js + pg | `nodejs-express/` | ✅ Complete |
+| `feature/typescript-nestjs` | Node.js + NestJS + Prisma | `typescript-nestjs/` | 🚧 Planned |
+| `feature/golang-gin` | Go 1.21 + Gin + GORM | `golang-gin/` | 🚧 Planned |
+| `feature/csharp-dotnet` | .NET 8 LTS + ASP.NET Core + EF Core | `csharp-dotnet/` | 🚧 Planned |
+| `feature/rust-axum` | Rust 1.75 + Axum + SQLx | `rust-axum/` | 🚧 Planned |
 
 ---
 
@@ -71,6 +90,20 @@ This repository contains **5 parallel implementations** of the same API specific
 - ✅ **Microservices ready** - Built-in gRPC, GraphQL support
 
 **Best For:** Enterprise applications, full-stack TypeScript teams, microservices
+
+---
+
+### 🟢 Node.js + Express.js
+**Version:** Node.js 22 LTS | Express.js 4+ | pg (PostgreSQL driver)
+
+**Why Choose:**
+- ✅ **Industry standard** - Most popular Node.js framework
+- ✅ **Minimalist** - Unopinionated, flexible architecture
+- ✅ **Massive ecosystem** - 400k+ npm packages
+- ✅ **Easy to learn** - Simple, straightforward API
+- ✅ **Production proven** - Used by Netflix, Uber, PayPal
+
+**Best For:** Startups, APIs, microservices, rapid prototyping
 
 ---
 
