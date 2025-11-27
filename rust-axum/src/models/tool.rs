@@ -28,7 +28,7 @@ pub struct Tool {
     pub category_id: i32,
     pub monthly_cost: f64,
     pub active_users_count: i32,
-    pub owner_department: String,
+    pub owner_department: Option<String>,
     pub status: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
@@ -56,7 +56,7 @@ pub struct CreateToolRequest {
     pub category_id: i32,
     pub monthly_cost: f64,
     pub active_users_count: Option<i32>,
-    pub owner_department: String,
+    pub owner_department: Option<String>,
     pub status: Option<String>,
 }
 

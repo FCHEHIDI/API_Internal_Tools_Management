@@ -45,8 +45,8 @@ pub async fn get_department_costs(
         )
     })?;
 
-    let query = "SELECT owner_department, \
-                 SUM(monthly_cost) as total_cost, \
+    let query = "SELECT CAST(owner_department AS TEXT) as owner_department, \
+                 CAST(SUM(monthly_cost) AS DOUBLE PRECISION) as total_cost, \
                  COUNT(*) as tool_count \
                  FROM tools \
                  GROUP BY owner_department \
@@ -110,10 +110,10 @@ pub async fn get_expensive_tools(
         )
     })?;
 
-    let limit = params.limit.unwrap_or(10);
+    let limit = params.limit.unwrap_or(10) as i64;
 
-    let query = "SELECT t.id, t.name, c.name as category, t.monthly_cost, \
-                 t.active_users_count, t.owner_department \
+    let query = "SELECT t.id, t.name, c.name as category, CAST(t.monthly_cost AS DOUBLE PRECISION) as monthly_cost, \
+                 t.active_users_count, CAST(t.status AS TEXT) as status \
                  FROM tools t \
                  LEFT JOIN categories c ON t.category_id = c.id \
                  ORDER BY t.monthly_cost DESC \
@@ -180,8 +180,8 @@ pub async fn get_tools_by_category(
 
     let cat_query = "SELECT c.id, c.name, \
                      COUNT(t.id) as tool_count, \
-                     COALESCE(AVG(t.monthly_cost), 0) as avg_cost, \
-                     COALESCE(SUM(t.monthly_cost), 0) as total_cost \
+                     CAST(COALESCE(AVG(t.monthly_cost), 0) AS DOUBLE PRECISION) as avg_cost, \
+                     CAST(COALESCE(SUM(t.monthly_cost), 0) AS DOUBLE PRECISION) as total_cost \
                      FROM categories c \
                      LEFT JOIN tools t ON c.id = t.category_id \
                      GROUP BY c.id, c.name \
@@ -207,7 +207,7 @@ pub async fn get_tools_by_category(
         let total_cost: f64 = cat_row.get(4);
 
         // Get tools for this category
-        let tools_query = "SELECT id, name, monthly_cost, status \
+        let tools_query = "SELECT id, name, CAST(monthly_cost AS DOUBLE PRECISION) as monthly_cost, CAST(status AS TEXT) as status \
                            FROM tools \
                            WHERE category_id = $1 \
                            ORDER BY monthly_cost DESC";
@@ -236,7 +236,7 @@ pub async fn get_tools_by_category(
         let insights_query = "SELECT \
                               MAX(name) FILTER (WHERE rn = 1) as most_expensive, \
                               MAX(name) FILTER (WHERE rn_asc = 1) as least_expensive, \
-                              COALESCE(AVG(active_users_count), 0) as avg_users \
+                              CAST(COALESCE(AVG(active_users_count), 0) AS DOUBLE PRECISION) as avg_users \
                               FROM ( \
                                   SELECT name, active_users_count, \
                                          ROW_NUMBER() OVER (ORDER BY monthly_cost DESC) as rn, \
@@ -304,14 +304,17 @@ pub async fn get_low_usage_tools(
 
     let threshold = params.threshold.unwrap_or(10);
 
-    let query = "SELECT t.id, t.name, c.name as category, t.monthly_cost, \
-                 t.active_users_count, t.owner_department \
-                 FROM tools t \
-                 LEFT JOIN categories c ON t.category_id = c.id \
-                 WHERE t.active_users_count < $1 \
-                 ORDER BY t.active_users_count ASC, t.monthly_cost DESC";
+    let query = format!(
+        "SELECT t.id, t.name, c.name as category, CAST(t.monthly_cost AS DOUBLE PRECISION) as monthly_cost, \
+         t.active_users_count, CAST(t.owner_department AS TEXT) as owner_department, CAST(t.status AS TEXT) as status \
+         FROM tools t \
+         LEFT JOIN categories c ON t.category_id = c.id \
+         WHERE t.active_users_count < {} \
+         ORDER BY t.active_users_count ASC, t.monthly_cost DESC",
+        threshold
+    );
 
-    let rows = client.query(query, &[&threshold]).await.map_err(|e| {
+    let rows = client.query(&query, &[]).await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
@@ -388,9 +391,9 @@ pub async fn get_vendor_summary(
 
     let vendor_query = "SELECT vendor, \
                         COUNT(*) as tool_count, \
-                        SUM(monthly_cost) as total_cost, \
-                        AVG(monthly_cost) as avg_cost, \
-                        STRING_AGG(DISTINCT owner_department, ', ' ORDER BY owner_department) as departments \
+                        CAST(SUM(monthly_cost) AS DOUBLE PRECISION) as total_cost, \
+                        CAST(AVG(monthly_cost) AS DOUBLE PRECISION) as avg_cost, \
+                        STRING_AGG(DISTINCT CAST(owner_department AS TEXT), ', ' ORDER BY CAST(owner_department AS TEXT)) as departments \
                         FROM tools \
                         WHERE vendor IS NOT NULL \
                         GROUP BY vendor \
@@ -416,7 +419,7 @@ pub async fn get_vendor_summary(
         let departments: String = vendor_row.get(4);
 
         // Get tools for this vendor
-        let tools_query = "SELECT name, monthly_cost, owner_department \
+        let tools_query = "SELECT name, CAST(monthly_cost AS DOUBLE PRECISION) as monthly_cost, CAST(owner_department AS TEXT) as owner_department \
                            FROM tools \
                            WHERE vendor = $1 \
                            ORDER BY monthly_cost DESC";

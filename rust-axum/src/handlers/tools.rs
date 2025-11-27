@@ -56,67 +56,35 @@ pub async fn get_tools(
     let limit = params.limit.unwrap_or(50);
     let skip = params.skip.unwrap_or(0);
 
-    // Build dynamic query
-    let mut query = String::from(
+    // Build query without dynamic parameters for simplicity
+    let query = format!(
         "SELECT t.id, t.name, t.description, t.vendor, t.website_url, \
-         t.category_id, t.monthly_cost, t.active_users_count, \
-         t.owner_department, t.status, t.created_at, t.updated_at, \
+         t.category_id, CAST(t.monthly_cost AS DOUBLE PRECISION) as monthly_cost, t.active_users_count, \
+         CAST(t.owner_department AS TEXT) as owner_department, CAST(t.status AS TEXT) as status, \
+         to_char(t.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, \
+         to_char(t.updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as updated_at, \
          c.name as category \
          FROM tools t \
          LEFT JOIN categories c ON t.category_id = c.id \
-         WHERE 1=1",
+         WHERE 1=1 {} {} {} {} \
+         ORDER BY t.id LIMIT $1 OFFSET $2",
+        params.status.as_ref().map(|s| format!(" AND t.status = '{}'", s)).unwrap_or_default(),
+        params.category_id.map(|id| format!(" AND t.category_id = {}", id)).unwrap_or_default(),
+        params.vendor.as_ref().map(|v| format!(" AND t.vendor ILIKE '%{}%'", v.replace("'", "''"))).unwrap_or_default(),
+        params.search.as_ref().map(|s| format!(" AND t.name ILIKE '%{}%'", s.replace("'", "''"))).unwrap_or_default(),
     );
 
-    let mut count_query = String::from("SELECT COUNT(*) FROM tools t WHERE 1=1");
-    let mut query_params: Vec<String> = Vec::new();
-    let mut param_index = 1;
-
-    if let Some(status) = &params.status {
-        query.push_str(&format!(" AND t.status = ${}", param_index));
-        count_query.push_str(&format!(" AND t.status = ${}", param_index));
-        query_params.push(status.clone());
-        param_index += 1;
-    }
-
-    if let Some(category_id) = params.category_id {
-        query.push_str(&format!(" AND t.category_id = ${}", param_index));
-        count_query.push_str(&format!(" AND t.category_id = ${}", param_index));
-        query_params.push(category_id.to_string());
-        param_index += 1;
-    }
-
-    if let Some(vendor) = &params.vendor {
-        query.push_str(&format!(" AND t.vendor ILIKE ${}", param_index));
-        count_query.push_str(&format!(" AND t.vendor ILIKE ${}", param_index));
-        query_params.push(format!("%{}%", vendor));
-        param_index += 1;
-    }
-
-    if let Some(search) = &params.search {
-        query.push_str(&format!(" AND t.name ILIKE ${}", param_index));
-        count_query.push_str(&format!(" AND t.name ILIKE ${}", param_index));
-        query_params.push(format!("%{}%", search));
-        param_index += 1;
-    }
+    let count_query = format!(
+        "SELECT COUNT(*) FROM tools t WHERE 1=1 {} {} {} {}",
+        params.status.as_ref().map(|s| format!(" AND t.status = '{}'", s)).unwrap_or_default(),
+        params.category_id.map(|id| format!(" AND t.category_id = {}", id)).unwrap_or_default(),
+        params.vendor.as_ref().map(|v| format!(" AND t.vendor ILIKE '%{}%'", v.replace("'", "''"))).unwrap_or_default(),
+        params.search.as_ref().map(|s| format!(" AND t.name ILIKE '%{}%'", s.replace("'", "''"))).unwrap_or_default(),
+    );
 
     // Get total count
-    let count_stmt = client.prepare(&count_query).await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse {
-                error: "Failed to prepare count query".to_string(),
-                message: e.to_string(),
-            }),
-        )
-    })?;
-
-    let params_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = query_params
-        .iter()
-        .map(|p| p as &(dyn tokio_postgres::types::ToSql + Sync))
-        .collect();
-
     let total: i64 = client
-        .query_one(&count_stmt, &params_refs)
+        .query_one(&count_query, &[])
         .await
         .map_err(|e| {
             (
@@ -129,27 +97,8 @@ pub async fn get_tools(
         })?
         .get(0);
 
-    // Add pagination
-    query.push_str(&format!(" ORDER BY t.id LIMIT ${} OFFSET ${}", param_index, param_index + 1));
-    query_params.push(limit.to_string());
-    query_params.push(skip.to_string());
-
-    let stmt = client.prepare(&query).await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ErrorResponse {
-                error: "Failed to prepare query".to_string(),
-                message: e.to_string(),
-            }),
-        )
-    })?;
-
-    let params_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = query_params
-        .iter()
-        .map(|p| p as &(dyn tokio_postgres::types::ToSql + Sync))
-        .collect();
-
-    let rows = client.query(&stmt, &params_refs).await.map_err(|e| {
+    // Execute main query
+    let rows = client.query(&query, &[&limit, &skip]).await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
@@ -161,20 +110,31 @@ pub async fn get_tools(
 
     let tools: Vec<Tool> = rows
         .iter()
-        .map(|row| Tool {
-            id: row.get(0),
-            name: row.get(1),
-            description: row.get(2),
-            vendor: row.get(3),
-            website_url: row.get(4),
-            category_id: row.get(5),
-            monthly_cost: row.get(6),
-            active_users_count: row.get(7),
-            owner_department: row.get(8),
-            status: row.get(9),
-            created_at: row.get(10),
-            updated_at: row.get(11),
-            category: row.get(12),
+        .map(|row| {
+            let created_at_str: String = row.get(10);
+            let updated_at_str: String = row.get(11);
+            
+            Tool {
+                id: row.get(0),
+                name: row.get(1),
+                description: row.get(2),
+                vendor: row.get(3),
+                website_url: row.get(4),
+                category_id: row.get(5),
+                monthly_cost: row.get(6),
+                active_users_count: row.get(7),
+                owner_department: row.get(8),
+                status: row.get(9),
+                created_at: chrono::DateTime::parse_from_rfc3339(&format!("{}Z", created_at_str.trim_end_matches('Z')))
+                    .ok()
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .unwrap_or_else(|| chrono::Utc::now()),
+                updated_at: chrono::DateTime::parse_from_rfc3339(&format!("{}Z", updated_at_str.trim_end_matches('Z')))
+                    .ok()
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .unwrap_or_else(|| chrono::Utc::now()),
+                category: row.get(12),
+            }
         })
         .collect();
 
@@ -222,8 +182,10 @@ pub async fn get_tool(
     })?;
 
     let query = "SELECT t.id, t.name, t.description, t.vendor, t.website_url, \
-                 t.category_id, t.monthly_cost, t.active_users_count, \
-                 t.owner_department, t.status, t.created_at, t.updated_at, \
+                 t.category_id, CAST(t.monthly_cost AS DOUBLE PRECISION) as monthly_cost, t.active_users_count, \
+                 CAST(t.owner_department AS TEXT) as owner_department, CAST(t.status AS TEXT) as status, \
+                 to_char(t.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, \
+                 to_char(t.updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as updated_at, \
                  c.name as category \
                  FROM tools t \
                  LEFT JOIN categories c ON t.category_id = c.id \
@@ -240,21 +202,32 @@ pub async fn get_tool(
     })?;
 
     match row {
-        Some(row) => Ok(Json(Tool {
-            id: row.get(0),
-            name: row.get(1),
-            description: row.get(2),
-            vendor: row.get(3),
-            website_url: row.get(4),
-            category_id: row.get(5),
-            monthly_cost: row.get(6),
-            active_users_count: row.get(7),
-            owner_department: row.get(8),
-            status: row.get(9),
-            created_at: row.get(10),
-            updated_at: row.get(11),
-            category: row.get(12),
-        })),
+        Some(row) => {
+            let created_at_str: String = row.get(10);
+            let updated_at_str: String = row.get(11);
+            
+            Ok(Json(Tool {
+                id: row.get(0),
+                name: row.get(1),
+                description: row.get(2),
+                vendor: row.get(3),
+                website_url: row.get(4),
+                category_id: row.get(5),
+                monthly_cost: row.get(6),
+                active_users_count: row.get(7),
+                owner_department: row.get(8),
+                status: row.get(9),
+                created_at: chrono::DateTime::parse_from_rfc3339(&format!("{}Z", created_at_str.trim_end_matches('Z')))
+                    .ok()
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .unwrap_or_else(|| chrono::Utc::now()),
+                updated_at: chrono::DateTime::parse_from_rfc3339(&format!("{}Z", updated_at_str.trim_end_matches('Z')))
+                    .ok()
+                    .map(|dt| dt.with_timezone(&chrono::Utc))
+                    .unwrap_or_else(|| chrono::Utc::now()),
+                category: row.get(12),
+            }))
+        }
         None => Err((
             StatusCode::NOT_FOUND,
             Json(ErrorResponse {
@@ -293,26 +266,25 @@ pub async fn create_tool(
 
     let status = req.status.unwrap_or_else(|| "active".to_string());
     let active_users = req.active_users_count.unwrap_or(0);
+    let owner_dept = req.owner_department.unwrap_or_else(|| "Engineering".to_string());
 
-    let query = "INSERT INTO tools (name, description, vendor, website_url, category_id, \
-                 monthly_cost, active_users_count, owner_department, status) \
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) \
-                 RETURNING id, name, description, vendor, website_url, category_id, \
-                 monthly_cost, active_users_count, owner_department, status, \
-                 created_at, updated_at";
+    // Use execute instead of query_one, then fetch the created row
+    let insert_query = "INSERT INTO tools (name, description, vendor, category_id, \
+                        monthly_cost, active_users_count, owner_department, status) \
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) \
+                        RETURNING id";
 
     let row = client
         .query_one(
-            query,
+            insert_query,
             &[
                 &req.name,
                 &req.description,
                 &req.vendor,
-                &req.website_url,
                 &req.category_id,
                 &req.monthly_cost,
                 &active_users,
-                &req.owner_department,
+                &owner_dept,
                 &status,
             ],
         )
@@ -326,14 +298,40 @@ pub async fn create_tool(
                 }),
             )
         })?;
+    
+    let new_id: i32 = row.get(0);
+
+    // Now fetch the complete row
+    let select_query = "SELECT t.id, t.name, t.description, t.vendor, t.website_url, \
+                        t.category_id, CAST(t.monthly_cost AS DOUBLE PRECISION) as monthly_cost, t.active_users_count, \
+                        CAST(t.owner_department AS TEXT) as owner_department, CAST(t.status AS TEXT) as status, \
+                        to_char(t.created_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as created_at, \
+                        to_char(t.updated_at, 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') as updated_at \
+                        FROM tools t WHERE t.id = $1";
+    
+    let row = client
+        .query_one(select_query, &[&new_id])
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ErrorResponse {
+                    error: "Failed to create tool".to_string(),
+                    message: e.to_string(),
+                }),
+            )
+        })?;
 
     // Get category name
     let category: Option<String> = client
-        .query_opt("SELECT name FROM categories WHERE id = $1", &[&req.category_id])
+        .query_opt("SELECT name FROM categories WHERE id = $1", &[&(req.category_id as i64)])
         .await
         .ok()
         .flatten()
         .map(|r| r.get(0));
+
+    let created_at_str: String = row.get(10);
+    let updated_at_str: String = row.get(11);
 
     Ok((
         StatusCode::CREATED,
@@ -348,8 +346,14 @@ pub async fn create_tool(
             active_users_count: row.get(7),
             owner_department: row.get(8),
             status: row.get(9),
-            created_at: row.get(10),
-            updated_at: row.get(11),
+            created_at: chrono::DateTime::parse_from_rfc3339(&format!("{}Z", created_at_str.trim_end_matches('Z')))
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or_else(|| chrono::Utc::now()),
+            updated_at: chrono::DateTime::parse_from_rfc3339(&format!("{}Z", updated_at_str.trim_end_matches('Z')))
+                .ok()
+                .map(|dt| dt.with_timezone(&chrono::Utc))
+                .unwrap_or_else(|| chrono::Utc::now()),
             category,
         }),
     ))
@@ -441,7 +445,7 @@ pub async fn update_tool(
 
     if let Some(category_id) = req.category_id {
         updates.push(format!("category_id = ${}", param_index));
-        params.push(Box::new(category_id));
+        params.push(Box::new(category_id as i64));
         param_index += 1;
     }
 
@@ -453,7 +457,7 @@ pub async fn update_tool(
 
     if let Some(active_users_count) = req.active_users_count {
         updates.push(format!("active_users_count = ${}", param_index));
-        params.push(Box::new(active_users_count));
+        params.push(Box::new(active_users_count as i64));
         param_index += 1;
     }
 
