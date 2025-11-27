@@ -1,5 +1,9 @@
 # 🐍 Python + FastAPI Implementation
 
+> **Branch**: `feature/python-fastapi`  
+> **Location**: `python-fastapi/` directory  
+> This branch contains ONLY the Python/FastAPI implementation.
+
 **Technology Stack:** Python 3.11+ | FastAPI 0.104+ | SQLAlchemy 2.0+ | PostgreSQL
 
 ---
