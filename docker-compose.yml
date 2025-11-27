@@ -105,6 +105,35 @@ services:
       - postgres
       - all
 
+  # =============================================
+  # RUBY ON RAILS API - Stack Rails
+  # =============================================
+  ruby-rails:
+    image: ruby:3.3-alpine
+    container_name: internal-tools-ruby-rails
+    working_dir: /app
+    command: sh -c "apk add --no-cache build-base postgresql-dev tzdata && bundle install && rails db:create db:migrate && rails server -b 0.0.0.0"
+    environment:
+      RAILS_ENV: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: internal_tools
+      DATABASE_USERNAME: ${POSTGRES_USER}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./ruby-rails:/app
+      - ruby_bundle:/usr/local/bundle
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal-tools-net
+    profiles:
+      - ruby
+      - all
+
 # =============================================
 # VOLUMES & NETWORKS
 # =============================================
@@ -114,6 +143,8 @@ volumes:
   postgres_data:  
     driver: local
   pgadmin_data:
+    driver: local
+  ruby_bundle:
     driver: local
 
 networks:
