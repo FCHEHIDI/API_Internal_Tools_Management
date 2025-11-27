@@ -185,19 +185,31 @@ golang-gin/
 - JSON response handling
 
 ### 2. **Database Integration**
-- Standard library `database/sql` with PostgreSQL driver
-- Connection pooling
+- Standard library `database/sql` with PostgreSQL driver (`lib/pq`)
+- **Raw SQL queries** (no ORM) for maximum control and performance
+- Connection pooling (10 max open, 2 max idle connections)
 - Prepared statements for SQL injection prevention
-- Proper error handling
+- Proper error handling with `sql.ErrNoRows` for 404s
+- NULL-safe scanning with `sql.NullString` for nullable fields
+
+**Note on ORMs:** This implementation uses raw SQL with `database/sql` for explicit control and learning purposes. Go has excellent ORM options if preferred:
+- **GORM** - Full-featured ORM (similar to TypeORM/Sequelize)
+- **sqlx** - Lightweight extension of database/sql
+- **ent** - Graph-based ORM by Facebook/Meta
+- **sqlc** - Generates type-safe Go from SQL queries
 
 ### 3. **Type Safety**
 - Struct-based models with JSON tags
-- Pointer fields for optional values
+- Pointer fields for optional values (`*string`, `*int`)
 - Strong typing throughout
+- No reflection overhead in queries
 
 ### 4. **Validation**
 - Gin binding tags for automatic validation
-- Custom validation logic
+  - `binding:"required"` - Required fields
+  - `binding:"min=2,max=100"` - Length constraints
+  - `binding:"oneof=active deprecated trial"` - Enum validation
+- Custom validation logic where needed
 - Descriptive error messages
 
 ### 5. **Documentation**
@@ -209,6 +221,7 @@ golang-gin/
 - Consistent error response structure
 - Proper HTTP status codes
 - Descriptive error messages
+- No panics - explicit error returns (Go idiom)
 
 ## 🔒 Validation Rules
 
