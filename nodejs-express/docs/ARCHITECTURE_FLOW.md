@@ -334,13 +334,13 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 
 ### **4. Comparison to Other Layers**
 
-| Layer | Java Express + Sequelize | Rust Axum | Python FastAPI |
-|-------|------------------|-----------|----------------|
-| Controller | `@RestController` | `Router::new()` | `@app.post()` |
-| DTO | `@Valid` annotations | Serde `deserialize` | Pydantic models |
-| Service | `@Service` class | Regular functions | Service functions |
-| Repository | `JpaRepository` | Direct SQL queries | SQLAlchemy ORM |
-| Entity | `@Entity` class | Structs | SQLAlchemy models |
+| Layer | Node.js Express | TypeScript NestJS | Python FastAPI |
+|-------|-----------------|-------------------|----------------|
+| Router | `app.post()` / Router | `@Controller()` | `@app.post()` |
+| Validation | express-validator | class-validator | Pydantic models |
+| Service | Service modules | `@Injectable()` class | Service functions |
+| Repository | Sequelize models | TypeORM Repository | SQLAlchemy ORM |
+| Model | Sequelize models | `@Entity()` class | SQLAlchemy models |
 
 ### **5. Transaction Flow**
 ```
@@ -350,15 +350,15 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 └─ Connection pool management
 ```
 
-### **6. The Magic of Annotations**
-```java
-@RestController  → Makes class handle HTTP requests
-@RequestMapping  → Defines base URL path
-@PostMapping     → Maps to HTTP POST method
-@Valid           → Triggers validation
-@Transactional   → Wraps in database transaction
-@Entity          → Maps to database table
-@PrePersist      → Runs before INSERT
+### **6. The Magic of Express Middleware**
+```javascript
+app.post('/api/tools')  → Route definition
+validateRequest         → Validation middleware
+Model.create()          → Sequelize create
+Model.findAll()         → Query all records
+hasMany / belongsTo     → Sequelize associations
+DataTypes.ENUM          → PostgreSQL ENUM type
+async/await             → Promise handling
 ```
 
 ## 📝 Complete CRUD Operation Examples
