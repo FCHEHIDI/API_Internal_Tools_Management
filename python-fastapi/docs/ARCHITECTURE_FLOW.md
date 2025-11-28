@@ -334,13 +334,13 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 
 ### **4. Comparison to Other Layers**
 
-| Layer | Java FastAPI + SQLAlchemy | Rust Axum | Python FastAPI |
-|-------|------------------|-----------|----------------|
-| Controller | `@RestController` | `Router::new()` | `@app.post()` |
-| DTO | `@Valid` annotations | Serde `deserialize` | Pydantic models |
-| Service | `@Service` class | Regular functions | Service functions |
-| Repository | `JpaRepository` | Direct SQL queries | SQLAlchemy ORM |
-| Entity | `@Entity` class | Structs | SQLAlchemy models |
+| Layer | Python FastAPI | Java Spring Boot | TypeScript NestJS |
+|-------|----------------|------------------|-------------------|
+| Router | `@app.post()` decorator | `@RestController` | `@Controller()` |
+| Schema | Pydantic models | `@Valid` annotations | class-validator |
+| Service | Service functions | `@Service` class | `@Injectable()` class |
+| Repository | SQLAlchemy Session | `JpaRepository` | TypeORM Repository |
+| Model | SQLAlchemy models | `@Entity` class | `@Entity()` class |
 
 ### **5. Transaction Flow**
 ```
@@ -350,15 +350,15 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 └─ Connection pool management
 ```
 
-### **6. The Magic of Annotations**
-```java
-@RestController  → Makes class handle HTTP requests
-@RequestMapping  → Defines base URL path
-@PostMapping     → Maps to HTTP POST method
-@Valid           → Triggers validation
-@Transactional   → Wraps in database transaction
-@Entity          → Maps to database table
-@PrePersist      → Runs before INSERT
+### **6. The Magic of Decorators & Type Hints**
+```python
+@app.post()          → HTTP POST route decorator
+@app.get()           → HTTP GET route decorator
+Field(...)           → Pydantic field validation
+column(...)          → SQLAlchemy column definition
+relationship(...)    → SQLAlchemy foreign key relationship
+Enum                 → PostgreSQL ENUM type mapping
+async def            → Async/await pattern for I/O
 ```
 
 ## 📝 Complete CRUD Operation Examples
