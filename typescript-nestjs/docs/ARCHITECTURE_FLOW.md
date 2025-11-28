@@ -13,21 +13,23 @@
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  LAYER 1: CONTROLLER (Web/API Layer - HTTP Entry Point)                     │
-│  📁 controller/ToolController.java                                          │
+│  📁 tools/tools.controller.ts                                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @RestController                         // Marks as REST endpoint          │
-│  @RequestMapping("/api/tools")           // Base URL path                   │
-│  public class ToolController {                                              │
+│  @Controller('api/tools')                // Marks as REST endpoint          │
+│  export class ToolsController {                                             │
 │                                                                             │
-│    @PostMapping                          // HTTP POST mapping               │
-│    public ResponseEntity<ToolResponse> createTool(                          │
-│        @Valid @RequestBody CreateToolRequest request  // ← DTO Input        │
-│    ) {                                                                      │
-│        // Step 1: @Valid triggers validation on DTO                         │
+│    constructor(private readonly toolsService: ToolsService) {}              │
+│                                                                             │
+│    @Post()                               // HTTP POST mapping               │
+│    @HttpCode(HttpStatus.CREATED)                                            │
+│    async create(                                                            │
+│        @Body(ValidationPipe) createToolDto: CreateToolDto  // ← DTO Input   │
+│    ): Promise<ToolResponse> {                                               │
+│        // Step 1: ValidationPipe triggers class-validator on DTO            │
 │        // Step 2: Call service layer for business logic                     │
-│        ToolResponse response = toolService.createTool(request);             │
+│        const tool = await this.toolsService.create(createToolDto);          │
 │        // Step 3: Return HTTP 201 Created with response                     │
-│        return ResponseEntity.status(HttpStatus.CREATED).body(response);     │
+│        return tool;                                                         │
 │    }                                                                        │
 │  }                                                                          │
 │                                                                             │
@@ -42,25 +44,28 @@
                     └────────────┬────────────┘
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 2: DTO (Data Transfer Objects - API Contract)                       ,│
-│  📁 dto/CreateToolRequest.java                                             |
+│  LAYER 2: DTO (Data Transfer Objects - API Contract)                       │
+│  📁 tools/dto/create-tool.dto.ts                                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @Data                                   // Lombok: getters/setters         │
-│  public class CreateToolRequest {                                           │
+│  export class CreateToolDto {                                               │
 │                                                                             │
-│    @NotBlank(message = "Name required")  // Validation rule                 │
-│    @Size(min = 2, max = 100)            // Length constraint                │
-│    private String name;                                                     │
+│    @IsString()                           // Type validation                 │
+│    @IsNotEmpty({ message: 'Name required' })                                │
+│    @Length(2, 100)                       // Length constraint               │
+│    name: string;                                                            │
 │                                                                             │
-│    @NotNull(message = "Monthly cost required")                              │
-│    @DecimalMin("0.0")                   // Must be positive                 │
-│    @Digits(integer=10, fraction=2)      // Max 2 decimals                   │
-│    private BigDecimal monthlyCost;                                          │
+│    @IsNumber()                                                              │
+│    @IsNotEmpty({ message: 'Monthly cost required' })                        │
+│    @Min(0.0)                             // Must be positive               │
+│    monthlyCost: number;                                                     │
 │                                                                             │
-│    @NotNull                                                                 │
-│    private Department ownerDepartment;  // ENUM validation                  │
+│    @IsEnum(Department)                   // ENUM validation                 │
+│    @IsNotEmpty()                                                            │
+│    ownerDepartment: Department;                                             │
 │                                                                             │
-│    private ToolStatus status;           // Optional field                   │
+│    @IsEnum(ToolStatus)                                                      │
+│    @IsOptional()                         // Optional field                  │
+│    status?: ToolStatus;                                                     │
 │  }                                                                          │
 │                                                                             │
 │  ROLE: API contract, input validation, data structure definition            │
@@ -73,34 +78,35 @@
                                  ▼                                 │          │
 ┌───────────────────────────────────────────────────────────────── ┼──────────┤
 │  LAYER 3: SERVICE (Business Logic Layer)                         │          │
-│  📁 service/ToolService.java                                     │          │
+│  📁 tools/tools.service.ts                                       │          │
 ├──────────────────────────────────────────────────────────────────┼──────────┤
-│  @Service                               // Spring component      │          │
-│  public class ToolService {                                      │          │
+│  @Injectable()                          // NestJS service        │          │
+│  export class ToolsService {                                     │          │
 │                                                                  │          │
-│    @Transactional                       // Database transaction  │          │
-│    public ToolResponse createTool(CreateToolRequest request) {   │          │
+│    async create(createToolDto: CreateToolDto): Promise<Tool> {   │          │
 │                                                                  │          │
 │      // STEP 1: Validate category exists (business rule)         │          │
-│      Category category = categoryRepository                      │          │
-│          .findById(request.getCategoryId())                      │          │
-│          .orElseThrow(() -> new ResourceNotFoundException(...)); │ ─ ─ ─ ─ ─│─ ─ ─┐
+│      const category = await this.categoryRepository              │          │
+│          .findOne({ where: { id: createToolDto.categoryId }});   │          │
+│      if (!category) {                                            │ ─ ─ ─ ─ ─│─ ─ ─┐
+│        throw new NotFoundException('Category not found');        │          │     │
+│      }                                                           │          │     │
 │                                                                  │          │     │
 │      // STEP 2: Map DTO to Entity                                │          │     │
-│      Tool tool = new Tool();                                     │          │     │
-│      tool.setName(request.getName());                            │          │     │
-│      tool.setMonthlyCost(request.getMonthlyCost());              │          │     │
-│      tool.setOwnerDepartment(request.getOwnerDepartment());      │          │     │
-│      tool.setCategory(category);                                 │          │     │
-│      tool.setStatus(request.getStatus() != null ?                │          │     │
-│                     request.getStatus() : ToolStatus.active);    │          │     │
-│      tool.setActiveUsersCount(0);  // Business logic             │          │     │
+│      const tool = this.toolRepository.create({                   │          │     │
+│        name: createToolDto.name,                                 │          │     │
+│        monthlyCost: createToolDto.monthlyCost,                   │          │     │
+│        ownerDepartment: createToolDto.ownerDepartment,           │          │     │
+│        category: category,                                       │          │     │
+│        status: createToolDto.status || ToolStatus.ACTIVE,        │          │     │
+│        activeUsersCount: 0  // Business logic                    │          │     │
+│      });                                                         │          │     │
 │                                                                  │          │     │
 │      // STEP 3: Save to database via repository                  │          │     │
-│      Tool savedTool = toolRepository.save(tool);                 │          │     │
+│      const savedTool = await this.toolRepository.save(tool);     │          │     │
 │                                ↓                                 │          │     │
-│      // STEP 4: Convert entity back to DTO                       │          │     │
-│      return ToolResponse.fromEntity(savedTool);                  │          │     │
+│      // STEP 4: Return entity (auto-converted to response)       │          │     │
+│      return savedTool;                                           │          │     │
 │    }                                                             │          │     │
 │  }                                                               │          │     │
 │                                                                  │          │     │
@@ -113,25 +119,24 @@
                                  ▼                                            │     │
 ┌─────────────────────────────────────────────────────────────────────────────┼─────┤
 │  LAYER 4: REPOSITORY (Data Access Layer)                                    │     │
-│  📁 repository/ToolRepository.java                                          │     │
+│  📁 tools/entities/tool.entity.ts (TypeORM Repository Pattern)              │     │
 ├─────────────────────────────────────────────────────────────────────────────┼─────┤
-│  @Repository                                                                │     │
-│  public interface ToolRepository extends JpaRepository<Tool, Long> {        │     │
+│  // TypeORM Repository accessed via DataSource                              │     │
+│  // Injected in service: @InjectRepository(Tool)                            │     │
+│  private toolRepository: Repository<Tool>                                    │     │
 │                                                                             │     │
-│    // JpaRepository provides built-in methods:                              │     │
-│    // - save(Tool tool)           → INSERT or UPDATE                        │     │
-│    // - findById(Long id)         → SELECT by ID                            │     │
-│    // - findAll()                 → SELECT all                              │     │
-│    // - deleteById(Long id)       → DELETE                                  │     │
-│    // - existsById(Long id)       → CHECK EXISTS                            │     │
+│    // TypeORM Repository provides built-in methods:                         │     │
+│    // - save(tool)                → INSERT or UPDATE                        │     │
+│    // - findOne({ where: {...}})  → SELECT by condition                     │     │
+│    // - find()                    → SELECT all                              │     │
+│    // - delete(id)                → DELETE                                  │     │
+│    // - count()                   → COUNT records                           │     │
 │                                                                             │     │
-│    // Custom query methods:                                                 │     │
-│    List<Tool> findByStatus(ToolStatus status);                              │     │
-│    List<Tool> findByOwnerDepartment(Department department);                 │     │
-│                                                                             │     │
-│    @Query("SELECT t FROM Tool t WHERE ...")  // JPQL custom query           │     │
-│    List<Tool> findWithFilters(...);                                         │     │
-│  }                                                                          │     │
+│    // Custom query methods via QueryBuilder:                                │     │
+│    await this.toolRepository                                                │     │
+│      .createQueryBuilder('tool')                                            │     │
+│      .where('tool.status = :status', { status })                            │     │
+│      .getMany();                                                            │     │
 │                                                                             │     │
 │  ROLE: Database queries, CRUD operations abstraction                        │     │
 │  INPUT: Entity objects or query parameters                                  │     │
@@ -142,34 +147,37 @@
                                  ▼                                                  │
 ┌─────────────────────────────────────────────────────────────────────────────┐     │
 │  LAYER 5: MODEL/ENTITY (Database Table Mapping)                             │     │
-│  📁 model/Tool.java                                                         │    │
+│  📁 tools/entities/tool.entity.ts                                           │    │
 ├─────────────────────────────────────────────────────────────────────────────┤    │
-│  @Entity                                // JPA entity annotation            │    │
-│  @Table(name = "tools")                 // Maps to 'tools' table            │    │
-│  public class Tool {                                                        │    │
+│  @Entity('tools')                       // TypeORM entity                   │    │
+│  export class Tool {                                                        │    │
 │                                                                             │    │
-│    @Id                                  // Primary key                      │    │
-│    @GeneratedValue(strategy = IDENTITY) // Auto-increment                   │    │
-│    private Long id;                                                         │    │
+│    @PrimaryGeneratedColumn()            // Primary key + auto-increment     │    │
+│    id: number;                                                              │    │
 │                                                                             │    │
-│    @Column(nullable = false, unique = true)                                 │    │
-│    private String name;                                                     │    │
+│    @Column({ nullable: false, unique: true })                               │    │
+│    name: string;                                                            │    │
 │                                                                             │    │
-│    @Column(name = "monthly_cost", precision = 10, scale = 2)                │    │
-│    private BigDecimal monthlyCost;                                          │    │
+│    @Column({ name: 'monthly_cost', type: 'decimal', precision: 10, scale: 2 })   │
+│    monthlyCost: number;                                                     │    │
 │                                                                             │    │
-│    @Enumerated(EnumType.STRING)         // Store as string                  │    │
-│    @JdbcTypeCode(SqlTypes.NAMED_ENUM)   // PostgreSQL ENUM support          │    │
-│    private Department ownerDepartment;                                      │    │
+│    @Column({                                                                │    │
+│      type: 'enum',                                                          │    │
+│      enum: Department,                  // PostgreSQL ENUM support          │    │
+│      enumName: 'department_type'                                            │    │
+│    })                                                                       │    │
+│    ownerDepartment: Department;                                             │    │
 │                                                                             │    │
-│    @ManyToOne(fetch = FetchType.EAGER)  // Relationship                     │    │
-│    @JoinColumn(name = "category_id")                                        │    │
-│    private Category category;                                               │    │
+│    @ManyToOne(() => Category, { eager: true })  // Relationship             │    │
+│    @JoinColumn({ name: 'category_id' })                                     │    │
+│    category: Category;                                                      │    │
 │                                                                             │    │
-│    @PrePersist                          // Lifecycle hook                   │    │
-│    protected void onCreate() {                                              │    │
-│      createdAt = LocalDateTime.now();   // Auto-set timestamp               │    │
-│      if (status == null) status = ToolStatus.active; // Default             │    │
+│    @CreateDateColumn()                  // Auto-set on insert               │    │
+│    createdAt: Date;                                                         │    │
+│                                                                             │    │
+│    @BeforeInsert()                      // Lifecycle hook                   │    │
+│    setDefaults() {                                                          │    │
+│      if (!this.status) this.status = ToolStatus.ACTIVE;                     │    │
 │    }                                                                        │    │
 │  }                                                                          │    │
 │                                                                             │    │
@@ -334,13 +342,13 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 
 ### **4. Comparison to Other Layers**
 
-| Layer | Java NestJS + TypeORM | Rust Axum | Python FastAPI |
-|-------|------------------|-----------|----------------|
-| Controller | `@RestController` | `Router::new()` | `@app.post()` |
-| DTO | `@Valid` annotations | Serde `deserialize` | Pydantic models |
-| Service | `@Service` class | Regular functions | Service functions |
-| Repository | `JpaRepository` | Direct SQL queries | SQLAlchemy ORM |
-| Entity | `@Entity` class | Structs | SQLAlchemy models |
+| Layer | TypeScript NestJS | Java Spring Boot | Python FastAPI |
+|-------|-------------------|------------------|----------------|
+| Controller | `@Controller()` | `@RestController` | `@app.post()` |
+| DTO | class-validator decorators | `@Valid` annotations | Pydantic models |
+| Service | `@Injectable()` class | `@Service` class | Service functions |
+| Repository | TypeORM Repository | `JpaRepository` | SQLAlchemy ORM |
+| Entity | `@Entity()` class | `@Entity` class | SQLAlchemy models |
 
 ### **5. Transaction Flow**
 ```
@@ -350,15 +358,15 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 └─ Connection pool management
 ```
 
-### **6. The Magic of Annotations**
-```java
-@RestController  → Makes class handle HTTP requests
-@RequestMapping  → Defines base URL path
-@PostMapping     → Maps to HTTP POST method
-@Valid           → Triggers validation
-@Transactional   → Wraps in database transaction
-@Entity          → Maps to database table
-@PrePersist      → Runs before INSERT
+### **6. The Magic of Decorators**
+```typescript
+@Controller()    → Makes class handle HTTP requests
+@Post()          → Maps to HTTP POST method
+@Body()          → Extracts request body
+@Injectable()    → Marks as NestJS service (dependency injection)
+@Entity()        → Maps to database table
+@Column()        → Maps to table column
+@BeforeInsert()  → Runs before INSERT
 ```
 
 ## 📝 Complete CRUD Operation Examples
