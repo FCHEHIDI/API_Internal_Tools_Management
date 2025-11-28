@@ -334,13 +334,13 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 
 ### **4. Comparison to Other Layers**
 
-| Layer | Java Spring Boot | Rust Axum | Python FastAPI |
-|-------|------------------|-----------|----------------|
-| Controller | `@RestController` | `Router::new()` | `@app.post()` |
-| DTO | `@Valid` annotations | Serde `deserialize` | Pydantic models |
-| Service | `@Service` class | Regular functions | Service functions |
-| Repository | `JpaRepository` | Direct SQL queries | SQLAlchemy ORM |
-| Entity | `@Entity` class | Structs | SQLAlchemy models |
+| Layer | C# .NET | Java Spring Boot | TypeScript NestJS |
+|-------|---------|------------------|-------------------|
+| Controller | `[ApiController]` | `@RestController` | `@Controller()` |
+| DTO | Data Annotations | `@Valid` annotations | class-validator |
+| Service | Service classes | `@Service` class | `@Injectable()` class |
+| Repository | EF DbContext | `JpaRepository` | TypeORM Repository |
+| Model | Entity classes | `@Entity` class | `@Entity()` class |
 
 ### **5. Transaction Flow**
 ```
@@ -350,15 +350,15 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 └─ Connection pool management
 ```
 
-### **6. The Magic of Annotations**
-```java
-@RestController  → Makes class handle HTTP requests
-@RequestMapping  → Defines base URL path
-@PostMapping     → Maps to HTTP POST method
-@Valid           → Triggers validation
-@Transactional   → Wraps in database transaction
-@Entity          → Maps to database table
-@PrePersist      → Runs before INSERT
+### **6. The Magic of Attributes**
+```csharp
+[ApiController]      → API controller behavior
+[Route("api/[controller]")] → Route template
+[HttpPost]           → HTTP POST mapping
+[Required]           → Required field validation
+[Range(0, 1000)]     → Value range validation
+[Table("tools")]     → Database table mapping
+[Column("name")]     → Column name mapping
 ```
 
 ## 📝 Complete CRUD Operation Examples
