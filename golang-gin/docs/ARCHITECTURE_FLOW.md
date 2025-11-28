@@ -12,23 +12,27 @@
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 1: CONTROLLER (Web/API Layer - HTTP Entry Point)                     │
-│  📁 controller/ToolController.java                                          │
+│  LAYER 1: HANDLER (Web/API Layer - HTTP Entry Point)                        │
+│  📁 handlers/tool_handler.go                                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @RestController                         // Marks as REST endpoint          │
-│  @RequestMapping("/api/tools")           // Base URL path                   │
-│  public class ToolController {                                              │
+│  type ToolHandler struct {                                                  │
+│      service *services.ToolService                                          │
+│  }                                                                          │
 │                                                                             │
-│    @PostMapping                          // HTTP POST mapping               │
-│    public ResponseEntity<ToolResponse> createTool(                          │
-│        @Valid @RequestBody CreateToolRequest request  // ← DTO Input        │
-│    ) {                                                                      │
-│        // Step 1: @Valid triggers validation on DTO                         │
-│        // Step 2: Call service layer for business logic                     │
-│        ToolResponse response = toolService.createTool(request);             │
-│        // Step 3: Return HTTP 201 Created with response                     │
-│        return ResponseEntity.status(HttpStatus.CREATED).body(response);     │
-│    }                                                                        │
+│  func (h *ToolHandler) CreateTool(c *gin.Context) {                         │
+│      var req CreateToolRequest           // DTO Input                       │
+│                                                                             │
+│      // Step 1: Bind and validate JSON                                      │
+│      if err := c.ShouldBindJSON(&req); err != nil {                         │
+│          c.JSON(400, gin.H{"error": "Validation failed"})                   │
+│          return                                                             │
+│      }                                                                      │
+│                                                                             │
+│      // Step 2: Call service layer for business logic                       │
+│      tool, err := h.service.CreateTool(&req)                                │
+│                                                                             │
+│      // Step 3: Return HTTP 201 Created with response                       │
+│      c.JSON(201, tool)                                                      │
 │  }                                                                          │
 │                                                                             │
 │  ROLE: HTTP request handling, routing, response formatting                  │
@@ -334,13 +338,13 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 
 ### **4. Comparison to Other Layers**
 
-| Layer | Java Gin + GORM | Rust Axum | Python FastAPI |
-|-------|------------------|-----------|----------------|
-| Controller | `@RestController` | `Router::new()` | `@app.post()` |
-| DTO | `@Valid` annotations | Serde `deserialize` | Pydantic models |
-| Service | `@Service` class | Regular functions | Service functions |
-| Repository | `JpaRepository` | Direct SQL queries | SQLAlchemy ORM |
-| Entity | `@Entity` class | Structs | SQLAlchemy models |
+| Layer | Go Gin | Java Spring Boot | Python FastAPI |
+|-------|--------|------------------|----------------|
+| Handler | gin.Context functions | `@RestController` | `@app.post()` |
+| DTO | Struct tags | `@Valid` annotations | Pydantic models |
+| Service | Service struct methods | `@Service` class | Service functions |
+| Repository | GORM methods | `JpaRepository` | SQLAlchemy ORM |
+| Model | GORM Model structs | `@Entity` class | SQLAlchemy models |
 
 ### **5. Transaction Flow**
 ```
