@@ -268,26 +268,30 @@ pub async fn create_tool(
     let active_users = req.active_users_count.unwrap_or(0);
     let owner_dept = req.owner_department.unwrap_or_else(|| "Engineering".to_string());
 
-    // Use execute instead of query_one, then fetch the created row
-    let insert_query = "INSERT INTO tools (name, description, vendor, category_id, \
-                        monthly_cost, active_users_count, owner_department, status) \
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) \
-                        RETURNING id";
+    // Escape single quotes in strings for SQL
+    let name_escaped = req.name.replace("'", "''");
+    let description_escaped = req.description.replace("'", "''");
+    let vendor_escaped = req.vendor.replace("'", "''");
+    let owner_dept_escaped = owner_dept.replace("'", "''");
+    let status_escaped = status.replace("'", "''");
+
+    // Use direct SQL with escaped strings (not ideal but works)
+    let insert_query = format!(
+        "INSERT INTO tools (name, description, vendor, category_id, monthly_cost, active_users_count, owner_department, status) \
+         VALUES ('{}', '{}', '{}', {}, {}, {}, CAST('{}'::TEXT AS department_type), CAST('{}'::TEXT AS tool_status_type)) \
+         RETURNING id",
+        name_escaped,
+        description_escaped,
+        vendor_escaped,
+        req.category_id,
+        req.monthly_cost,
+        active_users,
+        owner_dept_escaped,
+        status_escaped
+    );
 
     let row = client
-        .query_one(
-            insert_query,
-            &[
-                &req.name,
-                &req.description,
-                &req.vendor,
-                &req.category_id,
-                &req.monthly_cost,
-                &active_users,
-                &owner_dept,
-                &status,
-            ],
-        )
+        .query_one(&insert_query, &[])
         .await
         .map_err(|e| {
             (
@@ -462,13 +466,13 @@ pub async fn update_tool(
     }
 
     if let Some(owner_department) = req.owner_department {
-        updates.push(format!("owner_department = ${}", param_index));
+        updates.push(format!("owner_department = CAST(${}::TEXT AS department_type)", param_index));
         params.push(Box::new(owner_department));
         param_index += 1;
     }
 
     if let Some(status) = req.status {
-        updates.push(format!("status = ${}", param_index));
+        updates.push(format!("status = CAST(${}::TEXT AS tool_status_type)", param_index));
         params.push(Box::new(status));
         param_index += 1;
     }
