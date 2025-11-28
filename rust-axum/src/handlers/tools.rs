@@ -418,63 +418,49 @@ pub async fn update_tool(
         ));
     }
 
-    // Build dynamic update query
+    // Build dynamic update query using direct SQL formatting (workaround for tokio-postgres serialization issue)
     let mut updates = Vec::new();
-    let mut params: Vec<Box<dyn tokio_postgres::types::ToSql + Send + Sync>> = Vec::new();
-    let mut param_index = 1;
 
     if let Some(name) = req.name {
-        updates.push(format!("name = ${}", param_index));
-        params.push(Box::new(name));
-        param_index += 1;
+        let name_escaped = name.replace("'", "''");
+        updates.push(format!("name = '{}'", name_escaped));
     }
 
     if let Some(description) = req.description {
-        updates.push(format!("description = ${}", param_index));
-        params.push(Box::new(description));
-        param_index += 1;
+        let description_escaped = description.replace("'", "''");
+        updates.push(format!("description = '{}'", description_escaped));
     }
 
     if let Some(vendor) = req.vendor {
-        updates.push(format!("vendor = ${}", param_index));
-        params.push(Box::new(vendor));
-        param_index += 1;
+        let vendor_escaped = vendor.replace("'", "''");
+        updates.push(format!("vendor = '{}'", vendor_escaped));
     }
 
     if let Some(website_url) = req.website_url {
-        updates.push(format!("website_url = ${}", param_index));
-        params.push(Box::new(website_url));
-        param_index += 1;
+        let website_url_escaped = website_url.replace("'", "''");
+        updates.push(format!("website_url = '{}'", website_url_escaped));
     }
 
     if let Some(category_id) = req.category_id {
-        updates.push(format!("category_id = ${}", param_index));
-        params.push(Box::new(category_id as i64));
-        param_index += 1;
+        updates.push(format!("category_id = {}", category_id));
     }
 
     if let Some(monthly_cost) = req.monthly_cost {
-        updates.push(format!("monthly_cost = ${}", param_index));
-        params.push(Box::new(monthly_cost));
-        param_index += 1;
+        updates.push(format!("monthly_cost = {}", monthly_cost));
     }
 
     if let Some(active_users_count) = req.active_users_count {
-        updates.push(format!("active_users_count = ${}", param_index));
-        params.push(Box::new(active_users_count as i64));
-        param_index += 1;
+        updates.push(format!("active_users_count = {}", active_users_count));
     }
 
     if let Some(owner_department) = req.owner_department {
-        updates.push(format!("owner_department = CAST(${}::TEXT AS department_type)", param_index));
-        params.push(Box::new(owner_department));
-        param_index += 1;
+        let owner_dept_escaped = owner_department.replace("'", "''");
+        updates.push(format!("owner_department = CAST('{}'::TEXT AS department_type)", owner_dept_escaped));
     }
 
     if let Some(status) = req.status {
-        updates.push(format!("status = CAST(${}::TEXT AS tool_status_type)", param_index));
-        params.push(Box::new(status));
-        param_index += 1;
+        let status_escaped = status.replace("'", "''");
+        updates.push(format!("status = CAST('{}'::TEXT AS tool_status_type)", status_escaped));
     }
 
     if updates.is_empty() {
@@ -484,16 +470,10 @@ pub async fn update_tool(
     }
 
     updates.push("updated_at = CURRENT_TIMESTAMP".to_string());
-    params.push(Box::new(id));
 
-    let query = format!("UPDATE tools SET {} WHERE id = ${}", updates.join(", "), param_index);
+    let query = format!("UPDATE tools SET {} WHERE id = {}", updates.join(", "), id);
 
-    let params_refs: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = params
-        .iter()
-        .map(|p| p.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
-        .collect();
-
-    client.execute(&query, &params_refs).await.map_err(|e| {
+    client.execute(&query, &[]).await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(ErrorResponse {
