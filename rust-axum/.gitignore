@@ -2,6 +2,7 @@
 /target/
 **/*.rs.bk
 *.pdb
+Cargo.lock
 
 # IDE
 .idea/
@@ -12,6 +13,8 @@
 
 # Environment
 .env
+.env.local
+.env.*.local
 
 # OS
 .DS_Store
@@ -19,3 +22,20 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
+
+# Documentation build artifacts
+/docs/generated/
+/target/doc/
+
+# Test coverage
+tarpaulin-report.html
+cobertura.xml
+
+# Database
+*.db
+*.sqlite
+
+# Backup files
+*.bak
+*~

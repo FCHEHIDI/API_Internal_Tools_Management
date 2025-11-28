@@ -90,6 +90,13 @@ High-performance RESTful API built with Rust and Axum framework for managing int
 
 ## 📚 API Documentation
 
+### 📖 Comprehensive Documentation
+For detailed documentation, see the **[docs/](./docs/)** folder:
+
+- **[Documentation Index](./docs/README.md)** - Complete guide with quick start, architecture, and resources
+- **[Bug Fix Documentation](./docs/BUG_FIX_DOCUMENTATION.md)** - In-depth analysis of PostgreSQL ENUM serialization issue and universal parameter chaining patterns
+- **[TODO List](./docs/TODO.md)** - Project tasks and planned improvements
+
 ### Swagger UI
 Access interactive API documentation at:
 ```

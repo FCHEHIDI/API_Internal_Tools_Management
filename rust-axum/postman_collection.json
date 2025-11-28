@@ -1,0 +1,215 @@
+{
+	"info": {
+		"_postman_id": "rust-axum-internal-tools-api",
+		"name": "Internal Tools API - Rust + Axum",
+		"description": "Complete API collection for Internal Tools Management System built with Rust and Axum framework",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "rust-axum-api"
+	},
+	"item": [
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Check API and database health status"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Tools CRUD",
+			"item": [
+				{
+					"name": "Get All Tools",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tools?page=1&limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "tools"],
+							"query": [
+								{"key": "page", "value": "1", "description": "Page number (default: 1)"},
+								{"key": "limit", "value": "10", "description": "Items per page (default: 10, max: 100)"},
+								{"key": "department", "value": "Engineering", "description": "Filter by department", "disabled": true},
+								{"key": "status", "value": "active", "description": "Filter by status (active, deprecated, trial)", "disabled": true},
+								{"key": "min_cost", "value": "100", "description": "Minimum monthly cost", "disabled": true},
+								{"key": "max_cost", "value": "500", "description": "Maximum monthly cost", "disabled": true},
+								{"key": "vendor", "value": "GitHub", "description": "Filter by vendor name", "disabled": true},
+								{"key": "category", "value": "Development", "description": "Filter by category", "disabled": true}
+							]
+						},
+						"description": "Get paginated list of tools with optional filters"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tool by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tools/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "tools", "1"]
+						},
+						"description": "Get single tool by ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Tool",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"New Tool\",\n  \"description\": \"Tool description\",\n  \"vendor\": \"Vendor Name\",\n  \"category_id\": 1,\n  \"monthly_cost\": 99.99,\n  \"active_users_count\": 50,\n  \"owner_department\": \"Engineering\",\n  \"status\": \"active\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tools",
+							"host": ["{{base_url}}"],
+							"path": ["api", "tools"]
+						},
+						"description": "Create new tool"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Tool",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Updated Tool Name\",\n  \"monthly_cost\": 149.99,\n  \"active_users_count\": 75\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/tools/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "tools", "1"]
+						},
+						"description": "Update existing tool (partial updates supported)"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Tool",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/tools/1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "tools", "1"]
+						},
+						"description": "Delete tool by ID"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Analytics",
+			"item": [
+				{
+					"name": "Department Costs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/analytics/department-costs",
+							"host": ["{{base_url}}"],
+							"path": ["api", "analytics", "department-costs"]
+						},
+						"description": "Get cost breakdown by department with percentages"
+					},
+					"response": []
+				},
+				{
+					"name": "Expensive Tools",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/analytics/expensive-tools?limit=10",
+							"host": ["{{base_url}}"],
+							"path": ["api", "analytics", "expensive-tools"],
+							"query": [
+								{"key": "limit", "value": "10", "description": "Number of tools to return (default: 10)"}
+							]
+						},
+						"description": "Get most expensive tools with efficiency ratings"
+					},
+					"response": []
+				},
+				{
+					"name": "Tools by Category",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/analytics/tools-by-category",
+							"host": ["{{base_url}}"],
+							"path": ["api", "analytics", "tools-by-category"]
+						},
+						"description": "Get tools grouped by category with insights"
+					},
+					"response": []
+				},
+				{
+					"name": "Low Usage Tools",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/analytics/low-usage-tools?threshold=5",
+							"host": ["{{base_url}}"],
+							"path": ["api", "analytics", "low-usage-tools"],
+							"query": [
+								{"key": "threshold", "value": "5", "description": "User count threshold (default: 5)"}
+							]
+						},
+						"description": "Get underutilized tools with warning levels"
+					},
+					"response": []
+				},
+				{
+					"name": "Vendor Summary",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/analytics/vendor-summary",
+							"host": ["{{base_url}}"],
+							"path": ["api", "analytics", "vendor-summary"]
+						},
+						"description": "Get vendor spending summary and statistics"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		}
+	]
+}
