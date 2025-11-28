@@ -12,412 +12,506 @@
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 1: CONTROLLER (Web/API Layer - HTTP Entry Point)                     │
-│  📁 controller/ToolController.java                                          │
+│  LAYER 1: ROUTER (FastAPI Route Handler)                                    │
+│  📁 routers/tools.py                                                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @RestController                         // Marks as REST endpoint          │
-│  @RequestMapping("/api/tools")           // Base URL path                   │
-│  public class ToolController {                                              │
+│  @router.post("/tools", response_model=ToolResponse, status_code=201)       │
+│  async def create_tool(                                                     │
+│      tool: CreateToolRequest,           # ← Pydantic model validates input │
+│      db: Session = Depends(get_db)      # Dependency injection             │
+│  ) -> ToolResponse:                                                         │
+│      """                                                                    │
+│      Create a new tool in the system                                        │
+│      - Validates all input fields via Pydantic                              │
+│      - Returns 201 Created with tool data                                   │
+│      """                                                                    │
+│      # Step 1: Pydantic automatically validates request body                │
+│      # Step 2: Call service layer for business logic                        │
+│      new_tool = await tool_service.create_tool(db, tool)                    │
 │                                                                             │
-│    @PostMapping                          // HTTP POST mapping               │
-│    public ResponseEntity<ToolResponse> createTool(                          │
-│        @Valid @RequestBody CreateToolRequest request  // ← DTO Input        │
-│    ) {                                                                      │
-│        // Step 1: @Valid triggers validation on DTO                         │
-│        // Step 2: Call service layer for business logic                     │
-│        ToolResponse response = toolService.createTool(request);             │
-│        // Step 3: Return HTTP 201 Created with response                     │
-│        return ResponseEntity.status(HttpStatus.CREATED).body(response);     │
-│    }                                                                        │
-│  }                                                                          │
+│      # Step 3: Return response (Pydantic serializes to JSON)                │
+│      return new_tool                                                        │
 │                                                                             │
 │  ROLE: HTTP request handling, routing, response formatting                  │
-│  INPUT: HTTP request + CreateToolRequest DTO (validated)                    │
-│  OUTPUT: HTTP response + ToolResponse DTO                                   │
+│  INPUT: HTTP request + CreateToolRequest (auto-validated by Pydantic)       │
+│  OUTPUT: HTTP 201 + ToolResponse as JSON                                    │
 └────────────────────────────────┬────────────────────────────────────────────┘
                                  │
                     ┌────────────┴────────────┐
-                    │   @Valid annotation     │
-                    │   triggers validation   │
+                    │   Pydantic validation   │
+                    │   happens automatically │
                     └────────────┬────────────┘
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 2: DTO (Data Transfer Objects - API Contract)                       ,│
-│  📁 dto/CreateToolRequest.java                                             |
+│  LAYER 2: PYDANTIC SCHEMAS (Data Validation & Serialization)                │
+│  📁 schemas/tool.py                                                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @Data                                   // Lombok: getters/setters         │
-│  public class CreateToolRequest {                                           │
+│  from pydantic import BaseModel, Field, validator                           │
+│  from decimal import Decimal                                                │
+│  from typing import Optional                                                │
+│  from enum import Enum                                                      │
 │                                                                             │
-│    @NotBlank(message = "Name required")  // Validation rule                 │
-│    @Size(min = 2, max = 100)            // Length constraint                │
-│    private String name;                                                     │
+│  class Department(str, Enum):                                               │
+│      ENGINEERING = "Engineering"                                            │
+│      SALES = "Sales"                                                        │
+│      MARKETING = "Marketing"                                                │
+│      # ... more departments                                                 │
 │                                                                             │
-│    @NotNull(message = "Monthly cost required")                              │
-│    @DecimalMin("0.0")                   // Must be positive                 │
-│    @Digits(integer=10, fraction=2)      // Max 2 decimals                   │
-│    private BigDecimal monthlyCost;                                          │
+│  class ToolStatus(str, Enum):                                               │
+│      ACTIVE = "active"                                                      │
+│      DEPRECATED = "deprecated"                                              │
+│      TRIAL = "trial"                                                        │
 │                                                                             │
-│    @NotNull                                                                 │
-│    private Department ownerDepartment;  // ENUM validation                  │
+│  class CreateToolRequest(BaseModel):                                        │
+│      name: str = Field(..., min_length=2, max_length=100)                   │
+│      description: Optional[str] = Field(None, max_length=500)               │
+│      vendor: str = Field(..., min_length=1)                                 │
+│      website_url: Optional[str] = None                                      │
+│      monthly_cost: Decimal = Field(..., ge=0, decimal_places=2)             │
+│      category_id: int = Field(..., gt=0)                                    │
+│      owner_department: Department                                           │
+│      status: Optional[ToolStatus] = ToolStatus.ACTIVE                       │
+│      active_users_count: int = Field(default=0, ge=0)                       │
 │                                                                             │
-│    private ToolStatus status;           // Optional field                   │
+│      @validator('website_url')                                              │
+│      def validate_url(cls, v):                                              │
+│          if v and not v.startswith(('http://', 'https://')):                │
+│              raise ValueError('Invalid URL format')                         │
+│          return v                                                           │
+│                                                                             │
+│      class Config:                                                          │
+│          json_schema_extra = {                                              │
+│              "example": {                                                   │
+│                  "name": "Slack",                                           │
+│                  "vendor": "Slack Technologies",                            │
+│                  "monthly_cost": 8.00,                                      │
+│                  "category_id": 1,                                          │
+│                  "owner_department": "Engineering"                          │
+│              }                                                              │
+│          }                                                                  │
+│                                                                             │
+│  ROLE: Data validation, type checking, serialization/deserialization        │
+│  INPUT: JSON from HTTP request                                              │
+│  OUTPUT: Validated Python object (raises ValidationError if invalid)        │
+│                                                                             │
+│  IF VALIDATION FAILS: Raises ValidationError with detailed messages ────┐   │
+└────────────────────────────────┬────────────────────────────────────────┘│   │
+                                 │                                          │   │
+                                 ▼                                          │   │
+┌────────────────────────────────────────────────────────────────────────┼───┤
+│  LAYER 3: SERVICE (Business Logic Layer)                              │   │
+│  📁 services/tool_service.py                                          │   │
+├────────────────────────────────────────────────────────────────────────┼───┤
+│  from sqlalchemy.orm import Session                                    │   │
+│  from sqlalchemy.exc import IntegrityError                             │   │
+│  from fastapi import HTTPException                                     │   │
+│                                                                        │   │
+│  async def create_tool(                                                │   │
+│      db: Session,                                                      │   │
+│      tool_data: CreateToolRequest                                      │   │
+│  ) -> Tool:                                                            │   │
+│      """                                                               │   │
+│      Business logic for creating a new tool                            │   │
+│      """                                                               │   │
+│      # STEP 1: Validate category exists (business rule)                │   │
+│      category = db.query(Category).filter(                             │   │
+│          Category.id == tool_data.category_id                          │   │
+│      ).first()                                                         │   │
+│                                                                        │   │
+│      if not category:                                                  │   │
+│          raise HTTPException(                                          │ ──┘
+│              status_code=404,                                          │
+│              detail=f"Category {tool_data.category_id} not found"     │
+│          )                                                             │
+│                                                                        │
+│      # STEP 2: Create SQLAlchemy model instance                        │
+│      db_tool = Tool(                                                   │
+│          name=tool_data.name,                                          │
+│          description=tool_data.description,                            │
+│          vendor=tool_data.vendor,                                      │
+│          website_url=tool_data.website_url,                            │
+│          monthly_cost=tool_data.monthly_cost,                          │
+│          category_id=tool_data.category_id,                            │
+│          owner_department=tool_data.owner_department.value,            │
+│          status=tool_data.status.value,                                │
+│          active_users_count=tool_data.active_users_count               │
+│      )                                                                 │
+│                                                                        │
+│      # STEP 3: Add to session and commit to database                   │
+│      try:                                                              │
+│          db.add(db_tool)                                               │
+│          db.commit()                                                   │
+│          db.refresh(db_tool)  # Get auto-generated ID and timestamps   │
+│      except IntegrityError as e:                                       │
+│          db.rollback()                                                 │
+│          raise HTTPException(status_code=400, detail=str(e))           │
+│                                                                        │
+│      # STEP 4: Return the created tool                                 │
+│      return db_tool                                                    │
+│                                                                        │
+│  ROLE: Business logic, validation, transaction management              │
+│  INPUT: Database session + validated Pydantic schema                   │
+│  OUTPUT: SQLAlchemy model instance                                     │
+└────────────────────────────────┬───────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 4: SQLAlchemy ORM (Object-Relational Mapping)                       │
+│  📁 models/tool.py                                                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  from sqlalchemy import Column, Integer, String, Numeric, DateTime, Enum    │
+│  from sqlalchemy import ForeignKey                                          │
+│  from sqlalchemy.orm import relationship                                    │
+│  from sqlalchemy.sql import func                                            │
+│  from database import Base                                                  │
+│  import enum                                                                │
+│                                                                             │
+│  # PostgreSQL ENUM types                                                    │
+│  class DepartmentType(enum.Enum):                                           │
+│      ENGINEERING = "Engineering"                                            │
+│      SALES = "Sales"                                                        │
+│      MARKETING = "Marketing"                                                │
+│      # ... more                                                             │
+│                                                                             │
+│  class ToolStatusType(enum.Enum):                                           │
+│      ACTIVE = "active"                                                      │
+│      DEPRECATED = "deprecated"                                              │
+│      TRIAL = "trial"                                                        │
+│                                                                             │
+│  class Tool(Base):                                                          │
+│      __tablename__ = "tools"                                                │
+│                                                                             │
+│      id = Column(Integer, primary_key=True, index=True)                     │
+│      name = Column(String(100), unique=True, nullable=False, index=True)    │
+│      description = Column(String(500))                                      │
+│      vendor = Column(String(100), nullable=False)                           │
+│      website_url = Column(String(255))                                      │
+│      monthly_cost = Column(Numeric(10, 2), nullable=False)                  │
+│      active_users_count = Column(Integer, default=0)                        │
+│                                                                             │
+│      # Foreign key relationship                                             │
+│      category_id = Column(Integer, ForeignKey("categories.id"))             │
+│      category = relationship("Category", back_populates="tools")            │
+│                                                                             │
+│      # PostgreSQL ENUM columns                                              │
+│      owner_department = Column(                                             │
+│          Enum(DepartmentType, name="department_type"),                      │
+│          nullable=False                                                     │
+│      )                                                                      │
+│      status = Column(                                                       │
+│          Enum(ToolStatusType, name="tool_status_type"),                     │
+│          default=ToolStatusType.ACTIVE                                      │
+│      )                                                                      │
+│                                                                             │
+│      # Timestamps (auto-managed by PostgreSQL)                              │
+│      created_at = Column(DateTime(timezone=True), server_default=func.now())│
+│      updated_at = Column(                                                   │
+│          DateTime(timezone=True),                                           │
+│          server_default=func.now(),                                         │
+│          onupdate=func.now()                                                │
+│      )                                                                      │
+│                                                                             │
+│      def __repr__(self):                                                    │
+│          return f"<Tool(id={self.id}, name={self.name})>"                   │
+│                                                                             │
+│  ROLE: Database schema definition, ORM mapping                              │
+│  INPUT: Python objects                                                      │
+│  OUTPUT: SQL INSERT/UPDATE/SELECT statements                                │
+│  GENERATES: SQL via SQLAlchemy Core                                         │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DATABASE (PostgreSQL 15)                            │
+│  📊 Table: tools                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  SQL Generated by SQLAlchemy:                                               │
+│                                                                             │
+│  INSERT INTO tools (                                                        │
+│    name, description, vendor, website_url, monthly_cost,                    │
+│    category_id, owner_department, status,                                   │
+│    active_users_count, created_at, updated_at                               │
+│  ) VALUES (                                                                 │
+│    'Slack',                                                                 │
+│    'Team messaging platform',                                               │
+│    'Slack Technologies',                                                    │
+│    'https://slack.com',                                                     │
+│    8.00,                                                                    │
+│    1,                                                                       │
+│    'Engineering'::department_type,                                          │
+│    'active'::tool_status_type,                                              │
+│    0,                                                                       │
+│    NOW(),                                                                   │
+│    NOW()                                                                    │
+│  ) RETURNING id, created_at, updated_at;                                    │
+│                                                                             │
+│  Result: Tool(id=21, created_at='2025-11-28 16:30:00', ...)                 │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+              ┌──────────────────┴──────────────────┐
+              │  RESPONSE FLOW (Going back up)      │
+              └──────────────────┬──────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  RESPONSE: Pydantic Response Model                                          │
+│  📁 schemas/tool.py                                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  class ToolResponse(BaseModel):                                             │
+│      id: int                                                                │
+│      name: str                                                              │
+│      description: Optional[str]                                             │
+│      vendor: str                                                            │
+│      website_url: Optional[str]                                             │
+│      category: str                      # Category name (from relationship) │
+│      monthly_cost: Decimal                                                  │
+│      total_monthly_cost: Decimal        # Calculated field                  │
+│      owner_department: Department                                           │
+│      status: ToolStatus                                                     │
+│      active_users_count: int                                                │
+│      created_at: datetime                                                   │
+│      updated_at: datetime                                                   │
+│                                                                             │
+│      @property                                                              │
+│      def total_monthly_cost(self) -> Decimal:                               │
+│          return self.monthly_cost * self.active_users_count                 │
+│                                                                             │
+│      class Config:                                                          │
+│          from_attributes = True         # ORM mode (was orm_mode)           │
+│                                                                             │
+│  ROLE: Response serialization, data transformation                          │
+│  INPUT: SQLAlchemy model                                                    │
+│  OUTPUT: Clean JSON response                                                │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      HTTP RESPONSE TO CLIENT                                │
+│  Status: 201 Created                                                        │
+│  Content-Type: application/json                                             │
+│  Body:                                                                      │
+│  {                                                                          │
+│    "id": 21,                                                                │
+│    "name": "Slack",                                                         │
+│    "description": "Team messaging platform",                                │
+│    "vendor": "Slack Technologies",                                          │
+│    "website_url": "https://slack.com",                                      │
+│    "category": "Communication",                                             │
+│    "monthly_cost": 8.00,                                                    │
+│    "total_monthly_cost": 0.00,                                              │
+│    "owner_department": "Engineering",                                       │
+│    "status": "active",                                                      │
+│    "active_users_count": 0,                                                 │
+│    "created_at": "2025-11-28T16:30:00",                                     │
+│    "updated_at": "2025-11-28T16:30:00"                                      │
 │  }                                                                          │
-│                                                                             │
-│  ROLE: API contract, input validation, data structure definition            │
-│  INPUT: JSON from HTTP request body                                         │
-│  OUTPUT: Validated Java object passed to service                            │
-│                                                                             │
-│  IF VALIDATION FAILS: Throws MethodArgumentNotValidException ────┐          │
-└────────────────────────────────┬────────────────────────────────┘│          │
-                                 │                                 │          │
-                                 ▼                                 │          │
-┌───────────────────────────────────────────────────────────────── ┼──────────┤
-│  LAYER 3: SERVICE (Business Logic Layer)                         │          │
-│  📁 service/ToolService.java                                     │          │
-├──────────────────────────────────────────────────────────────────┼──────────┤
-│  @Service                               // Spring component      │          │
-│  public class ToolService {                                      │          │
-│                                                                  │          │
-│    @Transactional                       // Database transaction  │          │
-│    public ToolResponse createTool(CreateToolRequest request) {   │          │
-│                                                                  │          │
-│      // STEP 1: Validate category exists (business rule)         │          │
-│      Category category = categoryRepository                      │          │
-│          .findById(request.getCategoryId())                      │          │
-│          .orElseThrow(() -> new ResourceNotFoundException(...)); │ ─ ─ ─ ─ ─│─ ─ ─┐
-│                                                                  │          │     │
-│      // STEP 2: Map DTO to Entity                                │          │     │
-│      Tool tool = new Tool();                                     │          │     │
-│      tool.setName(request.getName());                            │          │     │
-│      tool.setMonthlyCost(request.getMonthlyCost());              │          │     │
-│      tool.setOwnerDepartment(request.getOwnerDepartment());      │          │     │
-│      tool.setCategory(category);                                 │          │     │
-│      tool.setStatus(request.getStatus() != null ?                │          │     │
-│                     request.getStatus() : ToolStatus.active);    │          │     │
-│      tool.setActiveUsersCount(0);  // Business logic             │          │     │
-│                                                                  │          │     │
-│      // STEP 3: Save to database via repository                  │          │     │
-│      Tool savedTool = toolRepository.save(tool);                 │          │     │
-│                                ↓                                 │          │     │
-│      // STEP 4: Convert entity back to DTO                       │          │     │
-│      return ToolResponse.fromEntity(savedTool);                  │          │     │
-│    }                                                             │          │     │
-│  }                                                               │          │     │
-│                                                                  │          │     │
-│  ROLE: Business logic, validation, orchestration, transactions   │          │     │
-│  INPUT: CreateToolRequest DTO (validated)                        │          │     │
-│  OUTPUT: ToolResponse DTO                                        │          │     │
-│  CALLS: Repository layer for data access                         │          │     │
-└────────────────────────────────┬─────────────────────────────────┘          │     │
-                                 │                                            │     │
-                                 ▼                                            │     │
-┌─────────────────────────────────────────────────────────────────────────────┼─────┤
-│  LAYER 4: REPOSITORY (Data Access Layer)                                    │     │
-│  📁 repository/ToolRepository.java                                          │     │
-├─────────────────────────────────────────────────────────────────────────────┼─────┤
-│  @Repository                                                                │     │
-│  public interface ToolRepository extends JpaRepository<Tool, Long> {        │     │
-│                                                                             │     │
-│    // JpaRepository provides built-in methods:                              │     │
-│    // - save(Tool tool)           → INSERT or UPDATE                        │     │
-│    // - findById(Long id)         → SELECT by ID                            │     │
-│    // - findAll()                 → SELECT all                              │     │
-│    // - deleteById(Long id)       → DELETE                                  │     │
-│    // - existsById(Long id)       → CHECK EXISTS                            │     │
-│                                                                             │     │
-│    // Custom query methods:                                                 │     │
-│    List<Tool> findByStatus(ToolStatus status);                              │     │
-│    List<Tool> findByOwnerDepartment(Department department);                 │     │
-│                                                                             │     │
-│    @Query("SELECT t FROM Tool t WHERE ...")  // JPQL custom query           │     │
-│    List<Tool> findWithFilters(...);                                         │     │
-│  }                                                                          │     │
-│                                                                             │     │
-│  ROLE: Database queries, CRUD operations abstraction                        │     │
-│  INPUT: Entity objects or query parameters                                  │     │
-│  OUTPUT: Entity objects from database                                       │     │
-│  USES: JPA/Hibernate for SQL generation and execution                       │     │
-└────────────────────────────────┬────────────────────────────────────────────┘     │
-                                 │                                                  │
-                                 ▼                                                  │
-┌─────────────────────────────────────────────────────────────────────────────┐     │
-│  LAYER 5: MODEL/ENTITY (Database Table Mapping)                             │     │
-│  📁 model/Tool.java                                                         │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  @Entity                                // JPA entity annotation            │    │
-│  @Table(name = "tools")                 // Maps to 'tools' table            │    │
-│  public class Tool {                                                        │    │
-│                                                                             │    │
-│    @Id                                  // Primary key                      │    │
-│    @GeneratedValue(strategy = IDENTITY) // Auto-increment                   │    │
-│    private Long id;                                                         │    │
-│                                                                             │    │
-│    @Column(nullable = false, unique = true)                                 │    │
-│    private String name;                                                     │    │
-│                                                                             │    │
-│    @Column(name = "monthly_cost", precision = 10, scale = 2)                │    │
-│    private BigDecimal monthlyCost;                                          │    │
-│                                                                             │    │
-│    @Enumerated(EnumType.STRING)         // Store as string                  │    │
-│    @JdbcTypeCode(SqlTypes.NAMED_ENUM)   // PostgreSQL ENUM support          │    │
-│    private Department ownerDepartment;                                      │    │
-│                                                                             │    │
-│    @ManyToOne(fetch = FetchType.EAGER)  // Relationship                     │    │
-│    @JoinColumn(name = "category_id")                                        │    │
-│    private Category category;                                               │    │
-│                                                                             │    │
-│    @PrePersist                          // Lifecycle hook                   │    │
-│    protected void onCreate() {                                              │    │
-│      createdAt = LocalDateTime.now();   // Auto-set timestamp               │    │
-│      if (status == null) status = ToolStatus.active; // Default             │    │
-│    }                                                                        │    │
-│  }                                                                          │    │
-│                                                                             │    │
-│  ROLE: Database schema mapping, data structure, constraints                 │    │
-│  INPUT: Data from repository save operations                                │    │
-│  OUTPUT: Persisted data in PostgreSQL database                              │    │
-│  GENERATES: SQL INSERT/UPDATE/SELECT statements via Hibernate               │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│                         DATABASE (PostgreSQL)                               │    │
-│  📊 Table: tools                                                            │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  SQL Generated by Hibernate:                                                │    │
-│                                                                             │    │
-│  INSERT INTO tools (                                                        │    │
-│    name, description, vendor, monthly_cost,                                 │    │
-│    owner_department, status, category_id,                                   │    │
-│    active_users_count, created_at, updated_at                               │    │
-│  ) VALUES (                                                                 │    │
-│    'Slack', 'Team messaging', 'Slack Tech', 8.00,                           │    │
-│    'Engineering'::department_type, 'active'::tool_status_type, 1,           │    │
-│    0, NOW(), NOW()                                                          │    │
-│  ) RETURNING id;                                                            │    │
-│                                                                             │    │
-│  Result: id = 21 (auto-generated)                                           │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                ┌────────────────┴─────────────────┐                               │
-                │  Transaction committed            │                              │
-                │  Tool saved successfully          │                              │
-                └────────────────┬─────────────────┘                               │
-                                 │                                                 │
-              ┌──────────────────┴──────────────────┐                              │
-              │  RESPONSE FLOW (Going back up)      │                              │
-              └──────────────────┬──────────────────┘                              │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│  LAYER 6: DTO OUTPUT (Response Object)                                      │    │
-│  📁 dto/ToolResponse.java                                                   │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  public class ToolResponse {                                                │    │
-│    private Long id;                     // From saved entity                │    │
-│    private String name;                                                     │    │
-│    private String category;             // From Category.name               │    │
-│    private BigDecimal monthlyCost;                                          │    │
-│    private BigDecimal totalMonthlyCost; // Calculated field                 │    │
-│    private Department ownerDepartment;                                      │    │
-│    private LocalDateTime createdAt;                                         │    │
-│                                                                             │    │
-│    public static ToolResponse fromEntity(Tool tool) {                       │    │
-│      return ToolResponse.builder()                                          │    │
-│        .id(tool.getId())                // Map entity fields to DTO         │    │
-│        .name(tool.getName())                                                │    │
-│        .category(tool.getCategory().getName()) // Flatten relationship      │    │
-│        .monthlyCost(tool.getMonthlyCost())                                  │    │
-│        .totalMonthlyCost(                                                   │    │
-│          tool.getMonthlyCost()                                              │    │
-│            .multiply(valueOf(tool.getActiveUsersCount()))                   │    │
-│        )                                                                    │    │
-│        .build();                                                            │    │
-│    }                                                                        │    │
-│  }                                                                          │    │
-│                                                                             │    │
-│  ROLE: API response contract, data transformation for clients               │    │
-│  INPUT: Tool entity from database                                           │    │
-│  OUTPUT: Clean JSON response (hides internal structure)                     │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│                      HTTP RESPONSE TO CLIENT                                │    │
-│  Status: 201 Created                                                        │    │
-│  Content-Type: application/json                                             │    │
-│  Body:                                                                      │    │
-│  {                                                                          │    │
-│    "id": 21,                                                                │    │
-│    "name": "Slack",                                                         │    │
-│    "description": "Team messaging platform",                                │    │
-│    "vendor": "Slack Technologies",                                          │    │
-│    "category": "Communication",                                             │    │
-│    "monthlyCost": 8.00,                                                     │    │
-│    "totalMonthlyCost": 0.00,                                                │    │
-│    "ownerDepartment": "Engineering",                                        │    │
-│    "status": "active",                                                      │    │
-│    "activeUsersCount": 0,                                                   │    │
-│    "createdAt": "2025-11-28T15:30:00",                                      │    │
-│    "updatedAt": "2025-11-28T15:30:00"                                       │    │
-│  }                                                                          │    │
-└─────────────────────────────────────────────────────────────────────────────┘    │
-                                                                                   │
-┌────────────────────────────────────────────────────────────────────────────────┐ │
-│  ERROR PATH (EXCEPTION HANDLING)                                               │ │
-│  📁 exception/GlobalExceptionHandler.java                      ◄─────────────────┘
-├────────────────────────────────────────────────────────────────────────────────┤
-│  @RestControllerAdvice                  // Global exception interceptor        │
-│  public class GlobalExceptionHandler {                                         │
-│                                                                                │
-│    // Validation errors from @Valid                                            │
-│    @ExceptionHandler(MethodArgumentNotValidException.class)                    │
-│    public ResponseEntity<ErrorResponse> handleValidation(exception) {          │
-│      Map<String, String> errors = new HashMap<>();                             │
-│      exception.getBindingResult().getFieldErrors()                             │
-│        .forEach(error -> errors.put(                                           │
-│          error.getField(),        // "name"                                    │
-│          error.getDefaultMessage() // "Name is required"                       │
-│        ));                                                                     │
-│                                                                                │
-│      return ResponseEntity.status(400).body(                                   │
-│        new ErrorResponse("Validation failed", errors)                          │
-│      );                                                                        │
-│    }                                                                           │
-│                                                                                │
-│    // Resource not found (from service layer)                                  │
-│    @ExceptionHandler(ResourceNotFoundException.class)                          │
-│    public ResponseEntity<ErrorResponse> handleNotFound(exception) {            │
-│      return ResponseEntity.status(404).body(                                   │
-│        new ErrorResponse("Resource not found", exception.getMessage())         │
-│      );                                                                        │
-│    }                                                                           │
-│                                                                                │
-│    // Generic errors                                                           │
-│    @ExceptionHandler(Exception.class)                                          │
-│    public ResponseEntity<ErrorResponse> handleGeneric(exception) {             │
-│      return ResponseEntity.status(500).body(                                   │
-│        new ErrorResponse("Internal server error", exception.getMessage())      │
-│      );                                                                        │
-│    }                                                                           │
-│  }                                                                             │
-│                                                                                │
-│  ROLE: Centralized error handling, consistent error responses                  │
-│  CATCHES: All exceptions from any layer                                        │
-│  OUTPUT: Standardized ErrorResponse DTO with HTTP status codes                 │
-└────────────────────────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  ERROR PATH (EXCEPTION HANDLING)                                           │
+│  📁 main.py (FastAPI exception handlers)                                   │
+├────────────────────────────────────────────────────────────────────────────┤
+│  from fastapi import FastAPI, Request                                      │
+│  from fastapi.responses import JSONResponse                                │
+│  from pydantic import ValidationError                                      │
+│                                                                            │
+│  app = FastAPI()                                                           │
+│                                                                            │
+│  @app.exception_handler(ValidationError)                                   │
+│  async def validation_exception_handler(                                   │
+│      request: Request,                                                     │
+│      exc: ValidationError                                                  │
+│  ):                                                                        │
+│      """Handle Pydantic validation errors"""                               │
+│      return JSONResponse(                                                  │
+│          status_code=422,                                                  │
+│          content={                                                         │
+│              "error": "Validation failed",                                 │
+│              "details": exc.errors()  # Field-by-field error messages      │
+│          }                                                                 │
+│      )                                                                     │
+│                                                                            │
+│  @app.exception_handler(HTTPException)                                     │
+│  async def http_exception_handler(                                         │
+│      request: Request,                                                     │
+│      exc: HTTPException                                                    │
+│  ):                                                                        │
+│      """Handle HTTP exceptions (404, 400, etc.)"""                         │
+│      return JSONResponse(                                                  │
+│          status_code=exc.status_code,                                      │
+│          content={                                                         │
+│              "error": exc.detail,                                          │
+│              "status_code": exc.status_code                                │
+│          }                                                                 │
+│      )                                                                     │
+│                                                                            │
+│  @app.exception_handler(Exception)                                         │
+│  async def general_exception_handler(                                      │
+│      request: Request,                                                     │
+│      exc: Exception                                                        │
+│  ):                                                                        │
+│      """Handle unexpected errors"""                                        │
+│      return JSONResponse(                                                  │
+│          status_code=500,                                                  │
+│          content={                                                         │
+│              "error": "Internal server error",                             │
+│              "message": str(exc)                                           │
+│          }                                                                 │
+│      )                                                                     │
+│                                                                            │
+│  ROLE: Centralized error handling, standardized error responses            │
+│  CATCHES: ValidationError, HTTPException, generic Exception                │
+│  OUTPUT: Consistent JSON error responses                                   │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 🎯 Key Concepts Summary
+## 🎯 Key Python/FastAPI Concepts
 
-### **1. Separation of Concerns**
-Each layer has a single responsibility:
-- **Controller**: HTTP routing only
-- **DTO**: API contract & validation
-- **Service**: Business logic & orchestration
-- **Repository**: Database queries
-- **Entity**: Database structure
-- **Exception Handler**: Error responses
-
-### **2. Data Flow Transformation**
-```
-JSON Request → CreateToolRequest DTO → Tool Entity → Database
-Database → Tool Entity → ToolResponse DTO → JSON Response
-```
-
-### **3. Why This Structure?**
-- **Testability**: Each layer can be tested independently
-- **Maintainability**: Changes to API don't affect database structure
-- **Security**: DTOs prevent over-posting attacks
-- **Flexibility**: Can change database without changing API
-- **Reusability**: Services can be called from multiple controllers
-
-### **4. Comparison to Other Layers**
-
-| Layer | Python FastAPI | Java Spring Boot | TypeScript NestJS |
-|-------|----------------|------------------|-------------------|
-| Router | `@app.post()` decorator | `@RestController` | `@Controller()` |
-| Schema | Pydantic models | `@Valid` annotations | class-validator |
-| Service | Service functions | `@Service` class | `@Injectable()` class |
-| Repository | SQLAlchemy Session | `JpaRepository` | TypeORM Repository |
-| Model | SQLAlchemy models | `@Entity` class | `@Entity()` class |
-
-### **5. Transaction Flow**
-```
-@Transactional annotation ensures:
-├─ All database operations succeed together
-├─ Automatic rollback on exceptions
-└─ Connection pool management
-```
-
-### **6. The Magic of Decorators & Type Hints**
+### **1. Async/Await Pattern**
 ```python
-@app.post()          → HTTP POST route decorator
-@app.get()           → HTTP GET route decorator
-Field(...)           → Pydantic field validation
-column(...)          → SQLAlchemy column definition
-relationship(...)    → SQLAlchemy foreign key relationship
-Enum                 → PostgreSQL ENUM type mapping
-async def            → Async/await pattern for I/O
+# All route handlers use async/await for concurrent I/O
+@router.post("/tools")
+async def create_tool(tool: CreateToolRequest, db: Session = Depends(get_db)):
+    # await other async operations
+    return await tool_service.create_tool(db, tool)
 ```
 
-## 📝 Complete CRUD Operation Examples
+### **2. Dependency Injection**
+```python
+# Database session injected automatically
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-### CREATE (POST)
-```
-Client Request → Controller (@PostMapping)
-              → Validate DTO (@Valid)
-              → Service.createTool()
-              → Repository.save()
-              → Database INSERT
-              → Return ToolResponse (201 Created)
-```
-
-### READ (GET)
-```
-Client Request → Controller (@GetMapping)
-              → Service.getToolById(id)
-              → Repository.findById()
-              → Database SELECT
-              → Return ToolResponse (200 OK)
+# Usage in route
+async def create_tool(db: Session = Depends(get_db)):
+    # db is automatically provided and cleaned up
 ```
 
-### UPDATE (PUT)
-```
-Client Request → Controller (@PutMapping)
-              → Validate DTO (@Valid)
-              → Service.updateTool(id, dto)
-              → Repository.findById() + save()
-              → Database SELECT + UPDATE
-              → Return ToolResponse (200 OK)
-```
-
-### DELETE
-```
-Client Request → Controller (@DeleteMapping)
-              → Service.deleteTool(id)
-              → Repository.deleteById()
-              → Database DELETE
-              → Return 204 No Content
+### **3. Pydantic Magic**
+```python
+# Automatic validation
+class CreateToolRequest(BaseModel):
+    name: str = Field(..., min_length=2)  # Required, min 2 chars
+    monthly_cost: Decimal = Field(..., ge=0)  # >= 0
+    
+    @validator('name')
+    def name_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError('Name cannot be empty')
+        return v
 ```
 
-### LIST with FILTERS
+### **4. SQLAlchemy ORM**
+```python
+# Pythonic database queries
+tool = db.query(Tool).filter(Tool.id == tool_id).first()
+tools = db.query(Tool).filter(Tool.status == 'active').all()
+
+# Relationships loaded automatically
+tool.category  # Joined automatically (eager loading)
 ```
-Client Request → Controller (@GetMapping with @RequestParam)
-              → Service.getAllTools(filters)
-              → Repository.findWithFilters() [@Query JPQL]
-              → Database SELECT with WHERE
-              → Return ToolListResponse (200 OK)
+
+### **5. Type Hints Everywhere**
+```python
+from typing import Optional, List
+from decimal import Decimal
+
+def create_tool(db: Session, tool_data: CreateToolRequest) -> Tool:
+    # Type hints provide IDE autocomplete and type checking
+    pass
 ```
+
+## 📝 Complete CRUD Operations Flow
+
+### **CREATE (POST /api/tools)**
+```
+Client → FastAPI Router (@app.post)
+      → Pydantic validates CreateToolRequest
+      → Service layer (business logic)
+      → SQLAlchemy ORM (INSERT)
+      → PostgreSQL database
+      → Return ToolResponse (201 Created)
+```
+
+### **READ (GET /api/tools/{id})**
+```
+Client → FastAPI Router (@app.get)
+      → Service layer
+      → SQLAlchemy query (SELECT WHERE id = ?)
+      → PostgreSQL database
+      → Pydantic ToolResponse
+      → Return JSON (200 OK)
+```
+
+### **UPDATE (PUT /api/tools/{id})**
+```
+Client → FastAPI Router (@app.put)
+      → Pydantic validates UpdateToolRequest
+      → Service layer (fetch + update)
+      → SQLAlchemy UPDATE
+      → PostgreSQL database
+      → Return updated ToolResponse (200 OK)
+```
+
+### **DELETE (DELETE /api/tools/{id})**
+```
+Client → FastAPI Router (@app.delete)
+      → Service layer
+      → SQLAlchemy DELETE
+      → PostgreSQL database
+      → Return 204 No Content
+```
+
+### **LIST with FILTERS (GET /api/tools?department=Engineering)**
+```
+Client → FastAPI Router (with Query parameters)
+      → Service layer builds dynamic query
+      → SQLAlchemy filters (.filter(), .filter_by())
+      → PostgreSQL WHERE clause
+      → Return List[ToolResponse] (200 OK)
+```
+
+## 🔥 Python/FastAPI Advantages
+
+✅ **Automatic API Documentation** - Swagger UI auto-generated from Pydantic models  
+✅ **Type Safety** - Type hints + Pydantic = compile-time safety  
+✅ **Async Performance** - ASGI server (Uvicorn) handles concurrent requests  
+✅ **Less Boilerplate** - No decorators spam, clean Python syntax  
+✅ **Easy Testing** - TestClient for unit tests without running server  
+✅ **ORM Power** - SQLAlchemy = mature, powerful ORM with great PostgreSQL support  
+
+## 🆚 Python vs Other Stacks
+
+| Feature | Python FastAPI | Java Spring Boot | TypeScript NestJS |
+|---------|---------------|------------------|-------------------|
+| **Learning Curve** | ⭐⭐ Easy | ⭐⭐⭐⭐ Steep | ⭐⭐⭐ Moderate |
+| **Code Verbosity** | ⭐⭐⭐⭐⭐ Minimal | ⭐⭐ Verbose | ⭐⭐⭐ Medium |
+| **Performance** | ⭐⭐⭐⭐ Fast (async) | ⭐⭐⭐⭐⭐ Very fast | ⭐⭐⭐⭐ Fast |
+| **Type Safety** | ⭐⭐⭐⭐ Runtime | ⭐⭐⭐⭐⭐ Compile-time | ⭐⭐⭐⭐⭐ Compile-time |
+| **Auto Documentation** | ⭐⭐⭐⭐⭐ Built-in | ⭐⭐⭐⭐ Via Springdoc | ⭐⭐⭐⭐ Via decorators |
+| **Database ORM** | SQLAlchemy | Hibernate/JPA | TypeORM |
+| **Async Support** | Native (async/await) | Virtual Threads | Native (async/await) |
+
+## 💡 Why FastAPI?
+
+1. **Pythonic** - Clean, readable, follows Python conventions
+2. **Fast Development** - Less code, more functionality
+3. **Validation Built-in** - Pydantic handles all validation
+4. **Modern** - Built on Python 3.7+ features (type hints, async)
+5. **Great for APIs** - Designed specifically for building APIs
+6. **Excellent Documentation** - Auto-generated, interactive, always up-to-date
 
 ---
 
-**This architecture ensures:**
-✅ Clean separation of concerns  
-✅ Easy testing at each layer  
-✅ Type safety with DTOs  
-✅ Automatic SQL generation  
-✅ Consistent error handling  
-✅ Transaction management  
-✅ Validation before business logic
+**This Python FastAPI architecture ensures:**
+✅ Type-safe code with Pydantic validation  
+✅ Clean separation of concerns (routes, schemas, models, services)  
+✅ Automatic API documentation  
+✅ Async performance  
+✅ Easy to test and maintain  
+✅ PostgreSQL ENUM support via SQLAlchemy
 
