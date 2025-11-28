@@ -334,13 +334,13 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 
 ### **4. Comparison to Other Layers**
 
-| Layer | Java Spring Boot | Rust Axum | Python FastAPI |
-|-------|------------------|-----------|----------------|
-| Controller | `@RestController` | `Router::new()` | `@app.post()` |
-| DTO | `@Valid` annotations | Serde `deserialize` | Pydantic models |
-| Service | `@Service` class | Regular functions | Service functions |
-| Repository | `JpaRepository` | Direct SQL queries | SQLAlchemy ORM |
-| Entity | `@Entity` class | Structs | SQLAlchemy models |
+| Layer | PHP Laravel | Java Spring Boot | Ruby Rails |
+|-------|-------------|------------------|------------|
+| Controller | Controller methods | `@RestController` | controller actions |
+| Request | Form Requests | `@Valid` annotations | Strong Parameters |
+| Service | Service classes | `@Service` class | Service objects |
+| Repository | Eloquent models | `JpaRepository` | ActiveRecord models |
+| Model | Eloquent models | `@Entity` class | ActiveRecord models |
 
 ### **5. Transaction Flow**
 ```
@@ -350,15 +350,15 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 └─ Connection pool management
 ```
 
-### **6. The Magic of Annotations**
-```java
-@RestController  → Makes class handle HTTP requests
-@RequestMapping  → Defines base URL path
-@PostMapping     → Maps to HTTP POST method
-@Valid           → Triggers validation
-@Transactional   → Wraps in database transaction
-@Entity          → Maps to database table
-@PrePersist      → Runs before INSERT
+### **6. The Magic of Laravel Conventions**
+```php
+Route::post()           → Define POST route
+$this->validate()       → Request validation
+Model::create()         → Create database record
+$model->save()          → Save changes
+hasMany() / belongsTo() → Eloquent relationships
+protected $fillable     → Mass assignment protection
+protected $casts        → Attribute casting (ENUM)
 ```
 
 ## 📝 Complete CRUD Operation Examples
