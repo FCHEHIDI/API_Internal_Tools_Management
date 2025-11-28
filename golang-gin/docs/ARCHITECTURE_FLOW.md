@@ -1,4 +1,4 @@
-# Gin + GORM CRUD Architecture - Request Flow Pipeline
+# Go + Gin CRUD Architecture - Request Flow Pipeline
 
 ## 📊 Complete Request Flow Diagram
 
@@ -12,416 +12,537 @@
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 1: HANDLER (Web/API Layer - HTTP Entry Point)                        │
+│  LAYER 1: HANDLER (Gin HTTP Handler)                                        │
 │  📁 handlers/tool_handler.go                                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  type ToolHandler struct {                                                  │
-│      service *services.ToolService                                          │
-│  }                                                                          │
+│  func CreateTool(c *gin.Context) {                                          │
+│      var req CreateToolRequest                                              │
 │                                                                             │
-│  func (h *ToolHandler) CreateTool(c *gin.Context) {                         │
-│      var req CreateToolRequest           // DTO Input                       │
-│                                                                             │
-│      // Step 1: Bind and validate JSON                                      │
+│      // Step 1: Bind JSON to struct (auto-validation)                       │
 │      if err := c.ShouldBindJSON(&req); err != nil {                         │
-│          c.JSON(400, gin.H{"error": "Validation failed"})                   │
+│          c.JSON(400, gin.H{"error": err.Error()})                           │
 │          return                                                             │
 │      }                                                                      │
 │                                                                             │
-│      // Step 2: Call service layer for business logic                       │
-│      tool, err := h.service.CreateTool(&req)                                │
+│      // Step 2: Get database from context                                   │
+│      db := c.MustGet("db").(*gorm.DB)                                       │
 │                                                                             │
-│      // Step 3: Return HTTP 201 Created with response                       │
+│      // Step 3: Call service layer (business logic)                         │
+│      tool, err := services.CreateTool(db, &req)                             │
+│      if err != nil {                                                        │
+│          c.JSON(500, gin.H{"error": err.Error()})                           │
+│          return                                                             │
+│      }                                                                      │
+│                                                                             │
+│      // Step 4: Return 201 Created with JSON response                       │
 │      c.JSON(201, tool)                                                      │
 │  }                                                                          │
 │                                                                             │
 │  ROLE: HTTP request handling, routing, response formatting                  │
-│  INPUT: HTTP request + CreateToolRequest DTO (validated)                    │
-│  OUTPUT: HTTP response + ToolResponse DTO                                   │
+│  INPUT: HTTP request + CreateToolRequest (validated by Gin binding)         │
+│  OUTPUT: HTTP 201 + ToolResponse as JSON                                    │
 └────────────────────────────────┬────────────────────────────────────────────┘
                                  │
                     ┌────────────┴────────────┐
-                    │   @Valid annotation     │
-                    │   triggers validation   │
+                    │   Gin binding           │
+                    │   + struct tags         │
                     └────────────┬────────────┘
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 2: DTO (Data Transfer Objects - API Contract)                       ,│
-│  📁 dto/CreateToolRequest.java                                             |
+│  LAYER 2: STRUCTS (Data Validation with Struct Tags)                        │
+│  📁 models/tool.go                                                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @Data                                   // Lombok: getters/setters         │
-│  public class CreateToolRequest {                                           │
+│  package models                                                             │
 │                                                                             │
-│    @NotBlank(message = "Name required")  // Validation rule                 │
-│    @Size(min = 2, max = 100)            // Length constraint                │
-│    private String name;                                                     │
+│  import (                                                                   │
+│      "time"                                                                 │
+│      "gorm.io/gorm"                                                         │
+│  )                                                                          │
 │                                                                             │
-│    @NotNull(message = "Monthly cost required")                              │
-│    @DecimalMin("0.0")                   // Must be positive                 │
-│    @Digits(integer=10, fraction=2)      // Max 2 decimals                   │
-│    private BigDecimal monthlyCost;                                          │
+│  // PostgreSQL ENUM types (as strings in Go)                                │
+│  type Department string                                                     │
+│  const (                                                                    │
+│      DeptEngineering Department = "Engineering"                             │
+│      DeptSales       Department = "Sales"                                   │
+│      DeptMarketing   Department = "Marketing"                               │
+│      DeptIT          Department = "IT"                                      │
+│      DeptHR          Department = "HR"                                      │
+│      DeptFinance     Department = "Finance"                                 │
+│      DeptOperations  Department = "Operations"                              │
+│  )                                                                          │
 │                                                                             │
-│    @NotNull                                                                 │
-│    private Department ownerDepartment;  // ENUM validation                  │
+│  type ToolStatus string                                                     │
+│  const (                                                                    │
+│      StatusActive     ToolStatus = "active"                                 │
+│      StatusDeprecated ToolStatus = "deprecated"                             │
+│      StatusTrial      ToolStatus = "trial"                                  │
+│  )                                                                          │
 │                                                                             │
-│    private ToolStatus status;           // Optional field                   │
+│  // Request struct (for incoming data)                                      │
+│  type CreateToolRequest struct {                                            │
+│      Name             string     `json:"name" binding:"required,min=2,max=100"` │
+│      Description      *string    `json:"description" binding:"omitempty,max=500"`│
+│      Vendor           string     `json:"vendor" binding:"required"`         │
+│      WebsiteURL       *string    `json:"website_url" binding:"omitempty,url"`│
+│      MonthlyCost      float64    `json:"monthly_cost" binding:"required,gte=0"`│
+│      CategoryID       uint       `json:"category_id" binding:"required,gt=0"`│
+│      OwnerDepartment  Department `json:"owner_department" binding:"required"`│
+│      Status           ToolStatus `json:"status" binding:"omitempty"`        │
+│      ActiveUsersCount int        `json:"active_users_count" binding:"gte=0"`│
 │  }                                                                          │
 │                                                                             │
-│  ROLE: API contract, input validation, data structure definition            │
-│  INPUT: JSON from HTTP request body                                         │
-│  OUTPUT: Validated Java object passed to service                            │
+│  // Database model (GORM)                                                   │
+│  type Tool struct {                                                         │
+│      ID                uint       `gorm:"primaryKey" json:"id"`             │
+│      Name              string     `gorm:"size:100;uniqueIndex;not null" json:"name"`│
+│      Description       *string    `gorm:"size:500" json:"description"`      │
+│      Vendor            string     `gorm:"size:100;not null" json:"vendor"`  │
+│      WebsiteURL        *string    `gorm:"size:255" json:"website_url"`      │
+│      MonthlyCost       float64    `gorm:"type:numeric(10,2);not null" json:"monthly_cost"`│
+│      ActiveUsersCount  int        `gorm:"default:0" json:"active_users_count"`│
 │                                                                             │
-│  IF VALIDATION FAILS: Throws MethodArgumentNotValidException ────┐          │
-└────────────────────────────────┬────────────────────────────────┘│          │
-                                 │                                 │          │
-                                 ▼                                 │          │
-┌───────────────────────────────────────────────────────────────── ┼──────────┤
-│  LAYER 3: SERVICE (Business Logic Layer)                         │          │
-│  📁 service/ToolService.java                                     │          │
-├──────────────────────────────────────────────────────────────────┼──────────┤
-│  @Service                               // Spring component      │          │
-│  public class ToolService {                                      │          │
-│                                                                  │          │
-│    @Transactional                       // Database transaction  │          │
-│    public ToolResponse createTool(CreateToolRequest request) {   │          │
-│                                                                  │          │
-│      // STEP 1: Validate category exists (business rule)         │          │
-│      Category category = categoryRepository                      │          │
-│          .findById(request.getCategoryId())                      │          │
-│          .orElseThrow(() -> new ResourceNotFoundException(...)); │ ─ ─ ─ ─ ─│─ ─ ─┐
-│                                                                  │          │     │
-│      // STEP 2: Map DTO to Entity                                │          │     │
-│      Tool tool = new Tool();                                     │          │     │
-│      tool.setName(request.getName());                            │          │     │
-│      tool.setMonthlyCost(request.getMonthlyCost());              │          │     │
-│      tool.setOwnerDepartment(request.getOwnerDepartment());      │          │     │
-│      tool.setCategory(category);                                 │          │     │
-│      tool.setStatus(request.getStatus() != null ?                │          │     │
-│                     request.getStatus() : ToolStatus.active);    │          │     │
-│      tool.setActiveUsersCount(0);  // Business logic             │          │     │
-│                                                                  │          │     │
-│      // STEP 3: Save to database via repository                  │          │     │
-│      Tool savedTool = toolRepository.save(tool);                 │          │     │
-│                                ↓                                 │          │     │
-│      // STEP 4: Convert entity back to DTO                       │          │     │
-│      return ToolResponse.fromEntity(savedTool);                  │          │     │
-│    }                                                             │          │     │
-│  }                                                               │          │     │
-│                                                                  │          │     │
-│  ROLE: Business logic, validation, orchestration, transactions   │          │     │
-│  INPUT: CreateToolRequest DTO (validated)                        │          │     │
-│  OUTPUT: ToolResponse DTO                                        │          │     │
-│  CALLS: Repository layer for data access                         │          │     │
-└────────────────────────────────┬─────────────────────────────────┘          │     │
-                                 │                                            │     │
-                                 ▼                                            │     │
-┌─────────────────────────────────────────────────────────────────────────────┼─────┤
-│  LAYER 4: REPOSITORY (Data Access Layer)                                    │     │
-│  📁 repository/ToolRepository.java                                          │     │
-├─────────────────────────────────────────────────────────────────────────────┼─────┤
-│  @Repository                                                                │     │
-│  public interface ToolRepository extends JpaRepository<Tool, Long> {        │     │
-│                                                                             │     │
-│    // JpaRepository provides built-in methods:                              │     │
-│    // - save(Tool tool)           → INSERT or UPDATE                        │     │
-│    // - findById(Long id)         → SELECT by ID                            │     │
-│    // - findAll()                 → SELECT all                              │     │
-│    // - deleteById(Long id)       → DELETE                                  │     │
-│    // - existsById(Long id)       → CHECK EXISTS                            │     │
-│                                                                             │     │
-│    // Custom query methods:                                                 │     │
-│    List<Tool> findByStatus(ToolStatus status);                              │     │
-│    List<Tool> findByOwnerDepartment(Department department);                 │     │
-│                                                                             │     │
-│    @Query("SELECT t FROM Tool t WHERE ...")  // JPQL custom query           │     │
-│    List<Tool> findWithFilters(...);                                         │     │
-│  }                                                                          │     │
-│                                                                             │     │
-│  ROLE: Database queries, CRUD operations abstraction                        │     │
-│  INPUT: Entity objects or query parameters                                  │     │
-│  OUTPUT: Entity objects from database                                       │     │
-│  USES: JPA/Hibernate for SQL generation and execution                       │     │
-└────────────────────────────────┬────────────────────────────────────────────┘     │
-                                 │                                                  │
-                                 ▼                                                  │
-┌─────────────────────────────────────────────────────────────────────────────┐     │
-│  LAYER 5: MODEL/ENTITY (Database Table Mapping)                             │     │
-│  📁 model/Tool.java                                                         │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  @Entity                                // JPA entity annotation            │    │
-│  @Table(name = "tools")                 // Maps to 'tools' table            │    │
-│  public class Tool {                                                        │    │
-│                                                                             │    │
-│    @Id                                  // Primary key                      │    │
-│    @GeneratedValue(strategy = IDENTITY) // Auto-increment                   │    │
-│    private Long id;                                                         │    │
-│                                                                             │    │
-│    @Column(nullable = false, unique = true)                                 │    │
-│    private String name;                                                     │    │
-│                                                                             │    │
-│    @Column(name = "monthly_cost", precision = 10, scale = 2)                │    │
-│    private BigDecimal monthlyCost;                                          │    │
-│                                                                             │    │
-│    @Enumerated(EnumType.STRING)         // Store as string                  │    │
-│    @JdbcTypeCode(SqlTypes.NAMED_ENUM)   // PostgreSQL ENUM support          │    │
-│    private Department ownerDepartment;                                      │    │
-│                                                                             │    │
-│    @ManyToOne(fetch = FetchType.EAGER)  // Relationship                     │    │
-│    @JoinColumn(name = "category_id")                                        │    │
-│    private Category category;                                               │    │
-│                                                                             │    │
-│    @PrePersist                          // Lifecycle hook                   │    │
-│    protected void onCreate() {                                              │    │
-│      createdAt = LocalDateTime.now();   // Auto-set timestamp               │    │
-│      if (status == null) status = ToolStatus.active; // Default             │    │
-│    }                                                                        │    │
-│  }                                                                          │    │
-│                                                                             │    │
-│  ROLE: Database schema mapping, data structure, constraints                 │    │
-│  INPUT: Data from repository save operations                                │    │
-│  OUTPUT: Persisted data in PostgreSQL database                              │    │
-│  GENERATES: SQL INSERT/UPDATE/SELECT statements via Hibernate               │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│                         DATABASE (PostgreSQL)                               │    │
-│  📊 Table: tools                                                            │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  SQL Generated by Hibernate:                                                │    │
-│                                                                             │    │
-│  INSERT INTO tools (                                                        │    │
-│    name, description, vendor, monthly_cost,                                 │    │
-│    owner_department, status, category_id,                                   │    │
-│    active_users_count, created_at, updated_at                               │    │
-│  ) VALUES (                                                                 │    │
-│    'Slack', 'Team messaging', 'Slack Tech', 8.00,                           │    │
-│    'Engineering'::department_type, 'active'::tool_status_type, 1,           │    │
-│    0, NOW(), NOW()                                                          │    │
-│  ) RETURNING id;                                                            │    │
-│                                                                             │    │
-│  Result: id = 21 (auto-generated)                                           │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                ┌────────────────┴─────────────────┐                               │
-                │  Transaction committed            │                              │
-                │  Tool saved successfully          │                              │
-                └────────────────┬─────────────────┘                               │
-                                 │                                                 │
-              ┌──────────────────┴──────────────────┐                              │
-              │  RESPONSE FLOW (Going back up)      │                              │
-              └──────────────────┬──────────────────┘                              │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│  LAYER 6: DTO OUTPUT (Response Object)                                      │    │
-│  📁 dto/ToolResponse.java                                                   │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  public class ToolResponse {                                                │    │
-│    private Long id;                     // From saved entity                │    │
-│    private String name;                                                     │    │
-│    private String category;             // From Category.name               │    │
-│    private BigDecimal monthlyCost;                                          │    │
-│    private BigDecimal totalMonthlyCost; // Calculated field                 │    │
-│    private Department ownerDepartment;                                      │    │
-│    private LocalDateTime createdAt;                                         │    │
-│                                                                             │    │
-│    public static ToolResponse fromEntity(Tool tool) {                       │    │
-│      return ToolResponse.builder()                                          │    │
-│        .id(tool.getId())                // Map entity fields to DTO         │    │
-│        .name(tool.getName())                                                │    │
-│        .category(tool.getCategory().getName()) // Flatten relationship      │    │
-│        .monthlyCost(tool.getMonthlyCost())                                  │    │
-│        .totalMonthlyCost(                                                   │    │
-│          tool.getMonthlyCost()                                              │    │
-│            .multiply(valueOf(tool.getActiveUsersCount()))                   │    │
-│        )                                                                    │    │
-│        .build();                                                            │    │
-│    }                                                                        │    │
-│  }                                                                          │    │
-│                                                                             │    │
-│  ROLE: API response contract, data transformation for clients               │    │
-│  INPUT: Tool entity from database                                           │    │
-│  OUTPUT: Clean JSON response (hides internal structure)                     │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│                      HTTP RESPONSE TO CLIENT                                │    │
-│  Status: 201 Created                                                        │    │
-│  Content-Type: application/json                                             │    │
-│  Body:                                                                      │    │
-│  {                                                                          │    │
-│    "id": 21,                                                                │    │
-│    "name": "Slack",                                                         │    │
-│    "description": "Team messaging platform",                                │    │
-│    "vendor": "Slack Technologies",                                          │    │
-│    "category": "Communication",                                             │    │
-│    "monthlyCost": 8.00,                                                     │    │
-│    "totalMonthlyCost": 0.00,                                                │    │
-│    "ownerDepartment": "Engineering",                                        │    │
-│    "status": "active",                                                      │    │
-│    "activeUsersCount": 0,                                                   │    │
-│    "createdAt": "2025-11-28T15:30:00",                                      │    │
-│    "updatedAt": "2025-11-28T15:30:00"                                       │    │
-│  }                                                                          │    │
-└─────────────────────────────────────────────────────────────────────────────┘    │
-                                                                                   │
-┌────────────────────────────────────────────────────────────────────────────────┐ │
-│  ERROR PATH (EXCEPTION HANDLING)                                               │ │
-│  📁 exception/GlobalExceptionHandler.java                      ◄─────────────────┘
-├────────────────────────────────────────────────────────────────────────────────┤
-│  @RestControllerAdvice                  // Global exception interceptor        │
-│  public class GlobalExceptionHandler {                                         │
-│                                                                                │
-│    // Validation errors from @Valid                                            │
-│    @ExceptionHandler(MethodArgumentNotValidException.class)                    │
-│    public ResponseEntity<ErrorResponse> handleValidation(exception) {          │
-│      Map<String, String> errors = new HashMap<>();                             │
-│      exception.getBindingResult().getFieldErrors()                             │
-│        .forEach(error -> errors.put(                                           │
-│          error.getField(),        // "name"                                    │
-│          error.getDefaultMessage() // "Name is required"                       │
-│        ));                                                                     │
-│                                                                                │
-│      return ResponseEntity.status(400).body(                                   │
-│        new ErrorResponse("Validation failed", errors)                          │
-│      );                                                                        │
-│    }                                                                           │
-│                                                                                │
-│    // Resource not found (from service layer)                                  │
-│    @ExceptionHandler(ResourceNotFoundException.class)                          │
-│    public ResponseEntity<ErrorResponse> handleNotFound(exception) {            │
-│      return ResponseEntity.status(404).body(                                   │
-│        new ErrorResponse("Resource not found", exception.getMessage())         │
-│      );                                                                        │
-│    }                                                                           │
-│                                                                                │
-│    // Generic errors                                                           │
-│    @ExceptionHandler(Exception.class)                                          │
-│    public ResponseEntity<ErrorResponse> handleGeneric(exception) {             │
-│      return ResponseEntity.status(500).body(                                   │
-│        new ErrorResponse("Internal server error", exception.getMessage())      │
-│      );                                                                        │
-│    }                                                                           │
-│  }                                                                             │
-│                                                                                │
-│  ROLE: Centralized error handling, consistent error responses                  │
-│  CATCHES: All exceptions from any layer                                        │
-│  OUTPUT: Standardized ErrorResponse DTO with HTTP status codes                 │
-└────────────────────────────────────────────────────────────────────────────────┘
+│      // Foreign key relationship                                            │
+│      CategoryID        uint       `gorm:"not null;index" json:"category_id"`│
+│      Category          Category   `gorm:"foreignKey:CategoryID" json:"category"`│
+│                                                                             │
+│      // PostgreSQL ENUM columns                                             │
+│      OwnerDepartment   Department `gorm:"type:department_type;not null" json:"owner_department"`│
+│      Status            ToolStatus `gorm:"type:tool_status_type;default:'active'" json:"status"`│
+│                                                                             │
+│      // Timestamps (auto-managed by GORM)                                   │
+│      CreatedAt         time.Time  `json:"created_at"`                       │
+│      UpdatedAt         time.Time  `json:"updated_at"`                       │
+│  }                                                                          │
+│                                                                             │
+│  // Response struct (for outgoing data)                                     │
+│  type ToolResponse struct {                                                 │
+│      ID                uint       `json:"id"`                               │
+│      Name              string     `json:"name"`                             │
+│      Description       *string    `json:"description"`                      │
+│      Vendor            string     `json:"vendor"`                           │
+│      WebsiteURL        *string    `json:"website_url"`                      │
+│      CategoryName      string     `json:"category"`                         │
+│      MonthlyCost       float64    `json:"monthly_cost"`                     │
+│      TotalMonthlyCost  float64    `json:"total_monthly_cost"`               │
+│      OwnerDepartment   Department `json:"owner_department"`                 │
+│      Status            ToolStatus `json:"status"`                           │
+│      ActiveUsersCount  int        `json:"active_users_count"`               │
+│      CreatedAt         time.Time  `json:"created_at"`                       │
+│      UpdatedAt         time.Time  `json:"updated_at"`                       │
+│  }                                                                          │
+│                                                                             │
+│  ROLE: Data structures, validation rules (struct tags), ORM mapping         │
+│  INPUT: JSON from HTTP request                                              │
+│  OUTPUT: Validated Go structs (or binding errors)                           │
+│                                                                             │
+│  IF VALIDATION FAILS: Gin returns 400 Bad Request automatically ─────────┐  │
+└────────────────────────────────┬─────────────────────────────────────────┘│  │
+                                 │                                           │  │
+                                 ▼                                           │  │
+┌─────────────────────────────────────────────────────────────────────────┼──┤
+│  LAYER 3: SERVICE (Business Logic Layer)                               │  │
+│  📁 services/tool_service.go                                           │  │
+├─────────────────────────────────────────────────────────────────────────┼──┤
+│  package services                                                       │  │
+│                                                                         │  │
+│  import (                                                               │  │
+│      "errors"                                                           │  │
+│      "gorm.io/gorm"                                                     │  │
+│      "myapp/models"                                                     │  │
+│  )                                                                      │  │
+│                                                                         │  │
+│  func CreateTool(db *gorm.DB, req *models.CreateToolRequest) (*models.ToolResponse, error) {│
+│      // STEP 1: Verify category exists (business rule)                 │  │
+│      var category models.Category                                      │  │
+│      if err := db.First(&category, req.CategoryID).Error; err != nil { │  │
+│          if errors.Is(err, gorm.ErrRecordNotFound) {                   │  │
+│              return nil, errors.New("category not found")              │ ─┘
+│          }                                                             │
+│          return nil, err                                               │
+│      }                                                                 │
+│                                                                         │
+│      // STEP 2: Create Tool model from request                         │
+│      status := req.Status                                              │
+│      if status == "" {                                                 │
+│          status = models.StatusActive  // Default status               │
+│      }                                                                 │
+│                                                                         │
+│      tool := models.Tool{                                              │
+│          Name:             req.Name,                                   │
+│          Description:      req.Description,                            │
+│          Vendor:           req.Vendor,                                 │
+│          WebsiteURL:       req.WebsiteURL,                             │
+│          MonthlyCost:      req.MonthlyCost,                            │
+│          CategoryID:       req.CategoryID,                             │
+│          OwnerDepartment:  req.OwnerDepartment,                        │
+│          Status:           status,                                     │
+│          ActiveUsersCount: req.ActiveUsersCount,                       │
+│      }                                                                 │
+│                                                                         │
+│      // STEP 3: Save to database (GORM handles INSERT)                 │
+│      if err := db.Create(&tool).Error; err != nil {                    │
+│          return nil, err                                               │
+│      }                                                                 │
+│                                                                         │
+│      // STEP 4: Load category relationship                             │
+│      db.Preload("Category").First(&tool, tool.ID)                      │
+│                                                                         │
+│      // STEP 5: Build response                                         │
+│      response := &models.ToolResponse{                                 │
+│          ID:               tool.ID,                                    │
+│          Name:             tool.Name,                                  │
+│          Description:      tool.Description,                           │
+│          Vendor:           tool.Vendor,                                │
+│          WebsiteURL:       tool.WebsiteURL,                            │
+│          CategoryName:     tool.Category.Name,                         │
+│          MonthlyCost:      tool.MonthlyCost,                           │
+│          TotalMonthlyCost: tool.MonthlyCost * float64(tool.ActiveUsersCount),│
+│          OwnerDepartment:  tool.OwnerDepartment,                       │
+│          Status:           tool.Status,                                │
+│          ActiveUsersCount: tool.ActiveUsersCount,                      │
+│          CreatedAt:        tool.CreatedAt,                             │
+│          UpdatedAt:        tool.UpdatedAt,                             │
+│      }                                                                 │
+│                                                                         │
+│      return response, nil                                              │
+│  }                                                                     │
+│                                                                         │
+│  ROLE: Business logic, validation, database operations orchestration    │
+│  INPUT: Database connection + validated request struct                 │
+│  OUTPUT: ToolResponse or error                                         │
+└────────────────────────────────┬────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 4: GORM (ORM - Object Relational Mapping)                           │
+│  📁 GORM abstracts SQL queries                                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  // GORM provides high-level database operations                            │
+│                                                                             │
+│  // Create operation                                                        │
+│  db.Create(&tool)  // Generates INSERT statement                            │
+│                                                                             │
+│  // Query operations                                                        │
+│  db.First(&tool, id)                 // SELECT * FROM tools WHERE id = ?    │
+│  db.Where("status = ?", "active")    // SELECT * WHERE status = 'active'    │
+│  db.Preload("Category").Find(&tools) // JOIN with categories               │
+│                                                                             │
+│  // Update operation                                                        │
+│  db.Model(&tool).Updates(map[string]interface{}{...})  // UPDATE statement  │
+│                                                                             │
+│  // Delete operation                                                        │
+│  db.Delete(&tool)  // DELETE FROM tools WHERE id = ?                        │
+│                                                                             │
+│  Features:                                                                  │
+│  ✅ Automatic SQL generation from struct tags                               │
+│  ✅ Relationship handling (belongs to, has many, many to many)              │
+│  ✅ Migration support (auto-create tables from structs)                     │
+│  ✅ Connection pooling built-in                                             │
+│  ✅ PostgreSQL ENUM support via custom types                                │
+│  ✅ Hooks (BeforeCreate, AfterUpdate, etc.)                                 │
+│                                                                             │
+│  SQL Generated for Create:                                                  │
+│  INSERT INTO tools (                                                        │
+│      name, description, vendor, website_url, monthly_cost,                  │
+│      category_id, owner_department, status,                                 │
+│      active_users_count, created_at, updated_at                             │
+│  ) VALUES (                                                                 │
+│      'Slack', 'Team messaging', 'Slack Technologies', 'https://slack.com',  │
+│      8.00, 1, 'Engineering'::department_type, 'active'::tool_status_type,   │
+│      0, NOW(), NOW()                                                        │
+│  ) RETURNING id;                                                            │
+│                                                                             │
+│  ROLE: ORM abstraction, SQL generation, connection management               │
+│  INPUT: Go structs                                                          │
+│  OUTPUT: SQL queries + database results                                     │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DATABASE (PostgreSQL 15)                            │
+│  📊 Table: tools                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Executed SQL:                                                              │
+│                                                                             │
+│  INSERT INTO tools (                                                        │
+│    name, description, vendor, website_url, monthly_cost,                    │
+│    category_id, owner_department, status,                                   │
+│    active_users_count, created_at, updated_at                               │
+│  ) VALUES (                                                                 │
+│    'Slack',                                                                 │
+│    'Team messaging platform',                                               │
+│    'Slack Technologies',                                                    │
+│    'https://slack.com',                                                     │
+│    8.00,                                                                    │
+│    1,                                                                       │
+│    'Engineering'::department_type,                                          │
+│    'active'::tool_status_type,                                              │
+│    0,                                                                       │
+│    NOW(),                                                                   │
+│    NOW()                                                                    │
+│  ) RETURNING id;                                                            │
+│                                                                             │
+│  Result: Row(id=21, created_at='2025-11-28 16:30:00', ...)                  │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+              ┌──────────────────┴──────────────────┐
+              │  RESPONSE FLOW (Going back up)      │
+              └──────────────────┬──────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      HTTP RESPONSE TO CLIENT                                │
+│  Status: 201 Created                                                        │
+│  Content-Type: application/json                                             │
+│  Body:                                                                      │
+│  {                                                                          │
+│    "id": 21,                                                                │
+│    "name": "Slack",                                                         │
+│    "description": "Team messaging platform",                                │
+│    "vendor": "Slack Technologies",                                          │
+│    "website_url": "https://slack.com",                                      │
+│    "category": "Communication",                                             │
+│    "monthly_cost": 8.00,                                                    │
+│    "total_monthly_cost": 0.00,                                              │
+│    "owner_department": "Engineering",                                       │
+│    "status": "active",                                                      │
+│    "active_users_count": 0,                                                 │
+│    "created_at": "2025-11-28T16:30:00Z",                                    │
+│    "updated_at": "2025-11-28T16:30:00Z"                                     │
+│  }                                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  ERROR HANDLING (Go's Explicit Error Pattern)                              │
+│  📁 Multiple handlers in the codebase                                      │
+├────────────────────────────────────────────────────────────────────────────┤
+│  // Go uses explicit error returns (no exceptions!)                        │
+│                                                                            │
+│  func CreateTool(c *gin.Context) {                                         │
+│      var req CreateToolRequest                                             │
+│                                                                            │
+│      // Validation error                                                   │
+│      if err := c.ShouldBindJSON(&req); err != nil {                        │
+│          c.JSON(400, gin.H{                                                │
+│              "error": "Validation failed",                                 │
+│              "details": err.Error(),                                       │
+│          })                                                                │
+│          return  // Early return (no exceptions thrown)                    │
+│      }                                                                     │
+│                                                                            │
+│      // Business logic error                                               │
+│      tool, err := services.CreateTool(db, &req)                            │
+│      if err != nil {                                                       │
+│          // Check error type                                               │
+│          if err.Error() == "category not found" {                          │
+│              c.JSON(404, gin.H{"error": err.Error()})                      │
+│              return                                                        │
+│          }                                                                 │
+│          // Generic error                                                  │
+│          c.JSON(500, gin.H{"error": "Internal server error"})              │
+│          return                                                            │
+│      }                                                                     │
+│                                                                            │
+│      // Success path                                                       │
+│      c.JSON(201, tool)                                                     │
+│  }                                                                         │
+│                                                                            │
+│  // Custom error types (optional, for better error handling)               │
+│  type AppError struct {                                                    │
+│      StatusCode int                                                        │
+│      Message     string                                                    │
+│  }                                                                         │
+│                                                                            │
+│  func (e *AppError) Error() string {                                       │
+│      return e.Message                                                      │
+│  }                                                                         │
+│                                                                            │
+│  ROLE: Explicit error handling, no hidden control flow                     │
+│  PATTERN: if err != nil { handle error; return }                           │
+│  ADVANTAGE: Every error is visible and handled explicitly                  │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 🎯 Key Concepts Summary
+## 🎯 Key Go/Gin Concepts
 
-### **1. Separation of Concerns**
-Each layer has a single responsibility:
-- **Controller**: HTTP routing only
-- **DTO**: API contract & validation
-- **Service**: Business logic & orchestration
-- **Repository**: Database queries
-- **Entity**: Database structure
-- **Exception Handler**: Error responses
-
-### **2. Data Flow Transformation**
-```
-JSON Request → CreateToolRequest DTO → Tool Entity → Database
-Database → Tool Entity → ToolResponse DTO → JSON Response
+### **1. Goroutines - Lightweight Concurrency**
+```go
+// Launch 10,000 concurrent operations
+for i := 0; i < 10000; i++ {
+    go func(id int) {  // "go" keyword launches a goroutine
+        handleRequest(id)  // No async/await needed!
+    }(i)
+}
+// Each goroutine is ~2KB (vs ~2MB for OS threads)
 ```
 
-### **3. Why This Structure?**
-- **Testability**: Each layer can be tested independently
-- **Maintainability**: Changes to API don't affect database structure
-- **Security**: DTOs prevent over-posting attacks
-- **Flexibility**: Can change database without changing API
-- **Reusability**: Services can be called from multiple controllers
-
-### **4. Comparison to Other Layers**
-
-| Layer | Go Gin | Java Spring Boot | Python FastAPI |
-|-------|--------|------------------|----------------|
-| Handler | gin.Context functions | `@RestController` | `@app.post()` |
-| DTO | Struct tags | `@Valid` annotations | Pydantic models |
-| Service | Service struct methods | `@Service` class | Service functions |
-| Repository | GORM methods | `JpaRepository` | SQLAlchemy ORM |
-| Model | GORM Model structs | `@Entity` class | SQLAlchemy models |
-
-### **5. Transaction Flow**
-```
-@Transactional annotation ensures:
-├─ All database operations succeed together
-├─ Automatic rollback on exceptions
-└─ Connection pool management
+### **2. Struct Tags - Metadata for Validation**
+```go
+type CreateToolRequest struct {
+    Name string `json:"name" binding:"required,min=2,max=100"`
+    //           ^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //           JSON field    Validation rules (parsed by Gin)
+    
+    Email string `json:"email" binding:"required,email"`
+    Age   int    `json:"age" binding:"gte=0,lte=150"`
+}
 ```
 
-### **6. The Magic of Annotations**
-```java
-@RestController  → Makes class handle HTTP requests
-@RequestMapping  → Defines base URL path
-@PostMapping     → Maps to HTTP POST method
-@Valid           → Triggers validation
-@Transactional   → Wraps in database transaction
-@Entity          → Maps to database table
-@PrePersist      → Runs before INSERT
+### **3. Error Handling - No Exceptions**
+```go
+// Go doesn't have try/catch - errors are values
+result, err := doSomething()
+if err != nil {
+    // Handle error explicitly
+    return nil, fmt.Errorf("failed to do something: %w", err)
+}
+// Continue with result
 ```
 
-## 📝 Complete CRUD Operation Examples
+### **4. Pointers for Optional Fields**
+```go
+type Tool struct {
+    Name        string   // Required field
+    Description *string  // Optional field (can be nil)
+    WebsiteURL  *string  // Optional field
+}
 
-### CREATE (POST)
-```
-Client Request → Controller (@PostMapping)
-              → Validate DTO (@Valid)
-              → Service.createTool()
-              → Repository.save()
-              → Database INSERT
-              → Return ToolResponse (201 Created)
-```
-
-### READ (GET)
-```
-Client Request → Controller (@GetMapping)
-              → Service.getToolById(id)
-              → Repository.findById()
-              → Database SELECT
-              → Return ToolResponse (200 OK)
+// Usage
+name := "Slack"
+desc := "Team messaging"
+tool := Tool{
+    Name:        name,
+    Description: &desc,  // Pointer to string
+    WebsiteURL:  nil,    // Explicitly nil
+}
 ```
 
-### UPDATE (PUT)
-```
-Client Request → Controller (@PutMapping)
-              → Validate DTO (@Valid)
-              → Service.updateTool(id, dto)
-              → Repository.findById() + save()
-              → Database SELECT + UPDATE
-              → Return ToolResponse (200 OK)
+### **5. GORM Magic**
+```go
+// Define struct with tags
+type Tool struct {
+    ID   uint   `gorm:"primaryKey"`
+    Name string `gorm:"size:100;uniqueIndex;not null"`
+}
+
+// GORM auto-generates SQL
+db.Create(&tool)  // INSERT INTO tools...
+db.First(&tool, 1)  // SELECT * FROM tools WHERE id = 1
+db.Updates(&tool)  // UPDATE tools SET...
 ```
 
-### DELETE
+## 📝 Complete CRUD Operations Flow
+
+### **CREATE (POST /api/tools)**
 ```
-Client Request → Controller (@DeleteMapping)
-              → Service.deleteTool(id)
-              → Repository.deleteById()
-              → Database DELETE
-              → Return 204 No Content
+Client → Gin Handler (CreateTool)
+      → Gin binding validates JSON
+      → Service layer (business logic)
+      → GORM Create (generates INSERT)
+      → PostgreSQL database
+      → Return ToolResponse (201 Created)
 ```
 
-### LIST with FILTERS
+### **READ (GET /api/tools/{id})**
 ```
-Client Request → Controller (@GetMapping with @RequestParam)
-              → Service.getAllTools(filters)
-              → Repository.findWithFilters() [@Query JPQL]
-              → Database SELECT with WHERE
-              → Return ToolListResponse (200 OK)
+Client → Gin Handler (GetTool)
+      → Extract path parameter
+      → Service layer
+      → GORM First (SELECT WHERE id = ?)
+      → PostgreSQL database
+      → Return JSON (200 OK)
 ```
+
+### **UPDATE (PUT /api/tools/{id})**
+```
+Client → Gin Handler (UpdateTool)
+      → Gin binding validates JSON
+      → Service layer (fetch + update)
+      → GORM Updates (UPDATE statement)
+      → PostgreSQL database
+      → Return updated ToolResponse (200 OK)
+```
+
+### **DELETE (DELETE /api/tools/{id})**
+```
+Client → Gin Handler (DeleteTool)
+      → Service layer
+      → GORM Delete (DELETE FROM...)
+      → PostgreSQL database
+      → Return 204 No Content
+```
+
+### **LIST with FILTERS (GET /api/tools?department=Engineering)**
+```
+Client → Gin Handler (with query params)
+      → Service layer builds query
+      → GORM Where clause
+      → PostgreSQL WHERE
+      → Return []ToolResponse (200 OK)
+```
+
+## 🔥 Go/Gin Advantages
+
+✅ **Goroutines** - Millions of concurrent operations on few OS threads  
+✅ **Simple Syntax** - Clean, readable, minimal boilerplate  
+✅ **Fast Compilation** - Build times in seconds  
+✅ **Static Binary** - Single executable with no dependencies  
+✅ **No Async/Await Needed** - Runtime handles concurrency automatically  
+✅ **Explicit Errors** - No hidden exceptions, every error visible  
+
+## 🆚 Go vs Other Stacks
+
+| Feature | Go Gin | Rust Axum | Python FastAPI |
+|---------|--------|-----------|----------------|
+| **Concurrency Model** | Goroutines (M:N) | Tasks (async/await) | Coroutines (async/await) |
+| **Learning Curve** | ⭐⭐ Easy | ⭐⭐⭐⭐⭐ Very steep | ⭐⭐ Easy |
+| **Performance** | ⭐⭐⭐⭐⭐ Very fast | ⭐⭐⭐⭐⭐ Fastest | ⭐⭐⭐⭐ Fast |
+| **Memory Safety** | ⭐⭐⭐ GC (runtime) | ⭐⭐⭐⭐⭐ Compile-time | ⭐⭐⭐ GC (runtime) |
+| **Error Handling** | Explicit (err values) | Result type | Exceptions |
+| **Compilation** | ⭐⭐⭐⭐⭐ Very fast | ⭐⭐ Slow | N/A (interpreted) |
+| **Binary Size** | ~10-20MB | ~5-10MB | N/A (requires Python) |
+| **Concurrency Syntax** | `go func()` | `async fn` + `.await` | `async def` + `await` |
+| **Null Safety** | Pointers (can be nil) | Option<T> (no null) | Optional (runtime) |
+
+## 💡 Why Go + Gin?
+
+1. **Simplicity** - Easy to learn, minimal concepts to master
+2. **Goroutines** - Concurrency built into the language (no special runtime)
+3. **Fast Compilation** - Iterate quickly during development
+4. **Single Binary** - Easy deployment (just copy the executable)
+5. **No GC Pauses** - Modern GC with sub-millisecond pauses
+6. **Strong Standard Library** - `net/http`, `database/sql`, `encoding/json` built-in
+
+## 🐹 Go's Philosophy
+
+**"Less is More"**
+- No classes, just structs and interfaces
+- No inheritance, just composition
+- No exceptions, just error values
+- No async/await, just goroutines
+- No package manager wars, just `go mod`
+
+**"Boring is Good"**
+- Explicit over implicit
+- Simple over clever
+- Readable over concise
+- Practical over elegant
+
+## ⚠️ Go Trade-offs
+
+- **No Generics** (until Go 1.18) - Lots of code duplication historically
+- **Verbose Error Handling** - `if err != nil` everywhere
+- **No Enums** - Have to use constants or custom types
+- **GC Overhead** - Not zero-cost like Rust
+- **But** → Trade complexity for simplicity, productivity, and speed! 🚀
 
 ---
 
-**This architecture ensures:**
-✅ Clean separation of concerns  
-✅ Easy testing at each layer  
-✅ Type safety with DTOs  
-✅ Automatic SQL generation  
-✅ Consistent error handling  
-✅ Transaction management  
-✅ Validation before business logic
+**This Go Gin architecture ensures:**
+✅ Goroutines handle millions of concurrent requests effortlessly  
+✅ Clean separation of concerns (handlers, services, models)  
+✅ Struct tags provide declarative validation  
+✅ GORM abstracts SQL while maintaining type safety  
+✅ Explicit error handling (no hidden control flow)  
+✅ PostgreSQL ENUM support via custom Go types
 
