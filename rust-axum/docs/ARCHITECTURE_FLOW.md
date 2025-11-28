@@ -12,24 +12,25 @@
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 1: CONTROLLER (Web/API Layer - HTTP Entry Point)                     │
-│  📁 controller/ToolController.java                                          │
+│  LAYER 1: HANDLER (Web/API Layer - HTTP Entry Point)                        │
+│  📁 handlers/tool_handlers.rs                                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @RestController                         // Marks as REST endpoint          │
-│  @RequestMapping("/api/tools")           // Base URL path                   │
-│  public class ToolController {                                              │
+│  pub async fn create_tool(                                                  │
+│      State(app_state): State<AppState>,                                     │
+│      Json(req): Json<CreateToolRequest>  // ← DTO Input (Serde deserialize) │
+│  ) -> Result<Json<Tool>, AppError> {                                        │
 │                                                                             │
-│    @PostMapping                          // HTTP POST mapping               │
-│    public ResponseEntity<ToolResponse> createTool(                          │
-│        @Valid @RequestBody CreateToolRequest request  // ← DTO Input        │
-│    ) {                                                                      │
-│        // Step 1: @Valid triggers validation on DTO                         │
-│        // Step 2: Call service layer for business logic                     │
-│        ToolResponse response = toolService.createTool(request);             │
-│        // Step 3: Return HTTP 201 Created with response                     │
-│        return ResponseEntity.status(HttpStatus.CREATED).body(response);     │
-│    }                                                                        │
+│      // Step 1: Serde automatically validates JSON structure                │
+│      // Step 2: Call service layer for business logic                       │
+│      let tool = create_tool_service(&app_state.db, req).await?;             │
+│                                                                             │
+│      // Step 3: Return HTTP 201 Created with response                       │
+│      Ok((StatusCode::CREATED, Json(tool)))                                  │
 │  }                                                                          │
+│                                                                             │
+│  ROLE: HTTP request handling, routing, response formatting                  │
+│  INPUT: HTTP request + CreateToolRequest DTO (auto-validated by Serde)      │
+│  OUTPUT: HTTP response + Tool struct as JSON                                │
 │                                                                             │
 │  ROLE: HTTP request handling, routing, response formatting                  │
 │  INPUT: HTTP request + CreateToolRequest DTO (validated)                    │
@@ -42,25 +43,27 @@
                     └────────────┬────────────┘
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 2: DTO (Data Transfer Objects - API Contract)                       ,│
-│  📁 dto/CreateToolRequest.java                                             |
+│  LAYER 2: STRUCT (Data Transfer Objects - API Contract)                     │
+│  📁 models/requests.rs                                                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @Data                                   // Lombok: getters/setters         │
-│  public class CreateToolRequest {                                           │
+│  #[derive(Debug, Deserialize, Validate)]                                    │
+│  pub struct CreateToolRequest {                                             │
 │                                                                             │
-│    @NotBlank(message = "Name required")  // Validation rule                 │
-│    @Size(min = 2, max = 100)            // Length constraint                │
-│    private String name;                                                     │
+│      #[validate(length(min = 2, max = 100))]                                │
+│      pub name: String,                   // Validation via validator crate  │
 │                                                                             │
-│    @NotNull(message = "Monthly cost required")                              │
-│    @DecimalMin("0.0")                   // Must be positive                 │
-│    @Digits(integer=10, fraction=2)      // Max 2 decimals                   │
-│    private BigDecimal monthlyCost;                                          │
+│      #[validate(range(min = 0.0))]       // Must be positive               │
+│      pub monthly_cost: Decimal,                                             │
 │                                                                             │
-│    @NotNull                                                                 │
-│    private Department ownerDepartment;  // ENUM validation                  │
+│      pub vendor: String,                                                    │
 │                                                                             │
-│    private ToolStatus status;           // Optional field                   │
+│      pub category_id: i64,                                                  │
+│                                                                             │
+│      pub owner_department: Department,   // ENUM (custom PostgreSQL type)   │
+│                                                                             │
+│      pub status: Option<ToolStatus>,     // Optional field                  │
+│                                                                             │
+│      pub active_users_count: i32,                                           │
 │  }                                                                          │
 │                                                                             │
 │  ROLE: API contract, input validation, data structure definition            │
@@ -73,13 +76,12 @@
                                  ▼                                 │          │
 ┌───────────────────────────────────────────────────────────────── ┼──────────┤
 │  LAYER 3: SERVICE (Business Logic Layer)                         │          │
-│  📁 service/ToolService.java                                     │          │
+│  📁 services/tool_service.rs                                     │          │
 ├──────────────────────────────────────────────────────────────────┼──────────┤
-│  @Service                               // Spring component      │          │
-│  public class ToolService {                                      │          │
-│                                                                  │          │
-│    @Transactional                       // Database transaction  │          │
-│    public ToolResponse createTool(CreateToolRequest request) {   │          │
+│  pub async fn create_tool_service(                               │          │
+│      pool: &PgPool,                     // Database connection   │          │
+│      req: CreateToolRequest             // Request DTO           │          │
+│  ) -> Result<Tool, AppError> {                                   │          │
 │                                                                  │          │
 │      // STEP 1: Validate category exists (business rule)         │          │
 │      Category category = categoryRepository                      │          │
@@ -334,13 +336,13 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 
 ### **4. Comparison to Other Layers**
 
-| Layer | Java Axum + SQLx | Rust Axum | Python FastAPI |
-|-------|------------------|-----------|----------------|
-| Controller | `@RestController` | `Router::new()` | `@app.post()` |
-| DTO | `@Valid` annotations | Serde `deserialize` | Pydantic models |
-| Service | `@Service` class | Regular functions | Service functions |
-| Repository | `JpaRepository` | Direct SQL queries | SQLAlchemy ORM |
-| Entity | `@Entity` class | Structs | SQLAlchemy models |
+| Layer | Rust Axum | Java Spring Boot | Python FastAPI |
+|-------|-----------|------------------|----------------|
+| Handler | async fn with State | `@RestController` | `@app.post()` |
+| Struct | Serde `derive` | `@Valid` annotations | Pydantic models |
+| Service | async functions | `@Service` class | Service functions |
+| Queries | SQLx (compile-time) | `JpaRepository` | SQLAlchemy ORM |
+| Model | Structs + FromRow | `@Entity` class | SQLAlchemy models |
 
 ### **5. Transaction Flow**
 ```
@@ -350,15 +352,15 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 └─ Connection pool management
 ```
 
-### **6. The Magic of Annotations**
-```java
-@RestController  → Makes class handle HTTP requests
-@RequestMapping  → Defines base URL path
-@PostMapping     → Maps to HTTP POST method
-@Valid           → Triggers validation
-@Transactional   → Wraps in database transaction
-@Entity          → Maps to database table
-@PrePersist      → Runs before INSERT
+### **6. The Magic of Derive Macros**
+```rust
+#[derive(Serialize)]      → JSON serialization (Serde)
+#[derive(Deserialize)]    → JSON deserialization (Serde)
+#[derive(sqlx::FromRow)]  → Map database row to struct
+#[derive(sqlx::Type)]     → Custom PostgreSQL type (ENUM)
+#[sqlx(try_from)]         → Custom type conversion
+#[sqlx(type_name)]        → PostgreSQL type name mapping
+#[validate]               → Validation rules (validator crate)
 ```
 
 ## 📝 Complete CRUD Operation Examples
