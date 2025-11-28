@@ -1,4 +1,4 @@
-# NestJS + TypeORM CRUD Architecture - Request Flow Pipeline
+# TypeScript + NestJS CRUD Architecture - Request Flow Pipeline
 
 ## 📊 Complete Request Flow Diagram
 
@@ -12,420 +12,546 @@
                                  │
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 1: CONTROLLER (Web/API Layer - HTTP Entry Point)                     │
-│  📁 tools/tools.controller.ts                                               │
+│  LAYER 1: CONTROLLER (NestJS HTTP Controller)                               │
+│  📁 controllers/tool.controller.ts                                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  @Controller('api/tools')                // Marks as REST endpoint          │
-│  export class ToolsController {                                             │
+│  @Controller('tools')                                                       │
+│  export class ToolController {                                              │
+│      constructor(private readonly toolService: ToolService) {}              │
 │                                                                             │
-│    constructor(private readonly toolsService: ToolsService) {}              │
+│      @Post()                          // POST /tools                        │
+│      @HttpCode(201)                   // Return 201 Created                 │
+│      async create(                                                          │
+│          @Body() createToolDto: CreateToolDto  // Auto-validation via DTOs │
+│      ): Promise<ToolResponseDto> {                                          │
+│          // Step 1: class-validator validates DTO automatically             │
+│          // Step 2: Call service layer for business logic                   │
+│          const tool = await this.toolService.create(createToolDto);         │
 │                                                                             │
-│    @Post()                               // HTTP POST mapping               │
-│    @HttpCode(HttpStatus.CREATED)                                            │
-│    async create(                                                            │
-│        @Body(ValidationPipe) createToolDto: CreateToolDto  // ← DTO Input   │
-│    ): Promise<ToolResponse> {                                               │
-│        // Step 1: ValidationPipe triggers class-validator on DTO            │
-│        // Step 2: Call service layer for business logic                     │
-│        const tool = await this.toolsService.create(createToolDto);          │
-│        // Step 3: Return HTTP 201 Created with response                     │
-│        return tool;                                                         │
-│    }                                                                        │
+│          // Step 3: Return response (auto-serialized to JSON)               │
+│          return tool;                                                       │
+│      }                                                                      │
 │  }                                                                          │
 │                                                                             │
-│  ROLE: HTTP request handling, routing, response formatting                  │
-│  INPUT: HTTP request + CreateToolRequest DTO (validated)                    │
-│  OUTPUT: HTTP response + ToolResponse DTO                                   │
+│  ROLE: HTTP request handling, routing, dependency injection                 │
+│  INPUT: HTTP request + CreateToolDto (validated by class-validator)         │
+│  OUTPUT: HTTP 201 + ToolResponseDto as JSON                                 │
 └────────────────────────────────┬────────────────────────────────────────────┘
                                  │
                     ┌────────────┴────────────┐
-                    │   @Valid annotation     │
-                    │   triggers validation   │
+                    │   class-validator       │
+                    │   + class-transformer   │
                     └────────────┬────────────┘
                                  ▼
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  LAYER 2: DTO (Data Transfer Objects - API Contract)                       │
-│  📁 tools/dto/create-tool.dto.ts                                           │
+│  LAYER 2: DTOs (Data Transfer Objects with Decorators)                      │
+│  📁 dto/create-tool.dto.ts                                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  export class CreateToolDto {                                               │
+│  import { IsString, IsNumber, IsEnum, IsOptional, Min, Max,                │
+│           MinLength, MaxLength, IsUrl } from 'class-validator';             │
+│  import { Type } from 'class-transformer';                                  │
 │                                                                             │
-│    @IsString()                           // Type validation                 │
-│    @IsNotEmpty({ message: 'Name required' })                                │
-│    @Length(2, 100)                       // Length constraint               │
-│    name: string;                                                            │
-│                                                                             │
-│    @IsNumber()                                                              │
-│    @IsNotEmpty({ message: 'Monthly cost required' })                        │
-│    @Min(0.0)                             // Must be positive               │
-│    monthlyCost: number;                                                     │
-│                                                                             │
-│    @IsEnum(Department)                   // ENUM validation                 │
-│    @IsNotEmpty()                                                            │
-│    ownerDepartment: Department;                                             │
-│                                                                             │
-│    @IsEnum(ToolStatus)                                                      │
-│    @IsOptional()                         // Optional field                  │
-│    status?: ToolStatus;                                                     │
+│  // TypeScript Enums (mapped to PostgreSQL ENUMs)                           │
+│  export enum Department {                                                   │
+│      ENGINEERING = 'Engineering',                                           │
+│      SALES = 'Sales',                                                       │
+│      MARKETING = 'Marketing',                                               │
+│      IT = 'IT',                                                             │
+│      HR = 'HR',                                                             │
+│      FINANCE = 'Finance',                                                   │
+│      OPERATIONS = 'Operations',                                             │
 │  }                                                                          │
 │                                                                             │
-│  ROLE: API contract, input validation, data structure definition            │
-│  INPUT: JSON from HTTP request body                                         │
-│  OUTPUT: Validated Java object passed to service                            │
+│  export enum ToolStatus {                                                   │
+│      ACTIVE = 'active',                                                     │
+│      DEPRECATED = 'deprecated',                                             │
+│      TRIAL = 'trial',                                                       │
+│  }                                                                          │
 │                                                                             │
-│  IF VALIDATION FAILS: Throws MethodArgumentNotValidException ────┐          │
-└────────────────────────────────┬────────────────────────────────┘│          │
-                                 │                                 │          │
-                                 ▼                                 │          │
-┌───────────────────────────────────────────────────────────────── ┼──────────┤
-│  LAYER 3: SERVICE (Business Logic Layer)                         │          │
-│  📁 tools/tools.service.ts                                       │          │
-├──────────────────────────────────────────────────────────────────┼──────────┤
-│  @Injectable()                          // NestJS service        │          │
-│  export class ToolsService {                                     │          │
-│                                                                  │          │
-│    async create(createToolDto: CreateToolDto): Promise<Tool> {   │          │
-│                                                                  │          │
-│      // STEP 1: Validate category exists (business rule)         │          │
-│      const category = await this.categoryRepository              │          │
-│          .findOne({ where: { id: createToolDto.categoryId }});   │          │
-│      if (!category) {                                            │ ─ ─ ─ ─ ─│─ ─ ─┐
-│        throw new NotFoundException('Category not found');        │          │     │
-│      }                                                           │          │     │
-│                                                                  │          │     │
-│      // STEP 2: Map DTO to Entity                                │          │     │
-│      const tool = this.toolRepository.create({                   │          │     │
-│        name: createToolDto.name,                                 │          │     │
-│        monthlyCost: createToolDto.monthlyCost,                   │          │     │
-│        ownerDepartment: createToolDto.ownerDepartment,           │          │     │
-│        category: category,                                       │          │     │
-│        status: createToolDto.status || ToolStatus.ACTIVE,        │          │     │
-│        activeUsersCount: 0  // Business logic                    │          │     │
-│      });                                                         │          │     │
-│                                                                  │          │     │
-│      // STEP 3: Save to database via repository                  │          │     │
-│      const savedTool = await this.toolRepository.save(tool);     │          │     │
-│                                ↓                                 │          │     │
-│      // STEP 4: Return entity (auto-converted to response)       │          │     │
-│      return savedTool;                                           │          │     │
-│    }                                                             │          │     │
-│  }                                                               │          │     │
-│                                                                  │          │     │
-│  ROLE: Business logic, validation, orchestration, transactions   │          │     │
-│  INPUT: CreateToolRequest DTO (validated)                        │          │     │
-│  OUTPUT: ToolResponse DTO                                        │          │     │
-│  CALLS: Repository layer for data access                         │          │     │
-└────────────────────────────────┬─────────────────────────────────┘          │     │
-                                 │                                            │     │
-                                 ▼                                            │     │
-┌─────────────────────────────────────────────────────────────────────────────┼─────┤
-│  LAYER 4: REPOSITORY (Data Access Layer)                                    │     │
-│  📁 tools/entities/tool.entity.ts (TypeORM Repository Pattern)              │     │
-├─────────────────────────────────────────────────────────────────────────────┼─────┤
-│  // TypeORM Repository accessed via DataSource                              │     │
-│  // Injected in service: @InjectRepository(Tool)                            │     │
-│  private toolRepository: Repository<Tool>                                    │     │
-│                                                                             │     │
-│    // TypeORM Repository provides built-in methods:                         │     │
-│    // - save(tool)                → INSERT or UPDATE                        │     │
-│    // - findOne({ where: {...}})  → SELECT by condition                     │     │
-│    // - find()                    → SELECT all                              │     │
-│    // - delete(id)                → DELETE                                  │     │
-│    // - count()                   → COUNT records                           │     │
-│                                                                             │     │
-│    // Custom query methods via QueryBuilder:                                │     │
-│    await this.toolRepository                                                │     │
-│      .createQueryBuilder('tool')                                            │     │
-│      .where('tool.status = :status', { status })                            │     │
-│      .getMany();                                                            │     │
-│                                                                             │     │
-│  ROLE: Database queries, CRUD operations abstraction                        │     │
-│  INPUT: Entity objects or query parameters                                  │     │
-│  OUTPUT: Entity objects from database                                       │     │
-│  USES: JPA/Hibernate for SQL generation and execution                       │     │
-└────────────────────────────────┬────────────────────────────────────────────┘     │
-                                 │                                                  │
-                                 ▼                                                  │
-┌─────────────────────────────────────────────────────────────────────────────┐     │
-│  LAYER 5: MODEL/ENTITY (Database Table Mapping)                             │     │
-│  📁 tools/entities/tool.entity.ts                                           │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  @Entity('tools')                       // TypeORM entity                   │    │
-│  export class Tool {                                                        │    │
-│                                                                             │    │
-│    @PrimaryGeneratedColumn()            // Primary key + auto-increment     │    │
-│    id: number;                                                              │    │
-│                                                                             │    │
-│    @Column({ nullable: false, unique: true })                               │    │
-│    name: string;                                                            │    │
-│                                                                             │    │
-│    @Column({ name: 'monthly_cost', type: 'decimal', precision: 10, scale: 2 })   │
-│    monthlyCost: number;                                                     │    │
-│                                                                             │    │
-│    @Column({                                                                │    │
-│      type: 'enum',                                                          │    │
-│      enum: Department,                  // PostgreSQL ENUM support          │    │
-│      enumName: 'department_type'                                            │    │
-│    })                                                                       │    │
-│    ownerDepartment: Department;                                             │    │
-│                                                                             │    │
-│    @ManyToOne(() => Category, { eager: true })  // Relationship             │    │
-│    @JoinColumn({ name: 'category_id' })                                     │    │
-│    category: Category;                                                      │    │
-│                                                                             │    │
-│    @CreateDateColumn()                  // Auto-set on insert               │    │
-│    createdAt: Date;                                                         │    │
-│                                                                             │    │
-│    @BeforeInsert()                      // Lifecycle hook                   │    │
-│    setDefaults() {                                                          │    │
-│      if (!this.status) this.status = ToolStatus.ACTIVE;                     │    │
-│    }                                                                        │    │
-│  }                                                                          │    │
-│                                                                             │    │
-│  ROLE: Database schema mapping, data structure, constraints                 │    │
-│  INPUT: Data from repository save operations                                │    │
-│  OUTPUT: Persisted data in PostgreSQL database                              │    │
-│  GENERATES: SQL INSERT/UPDATE/SELECT statements via Hibernate               │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│                         DATABASE (PostgreSQL)                               │    │
-│  📊 Table: tools                                                            │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  SQL Generated by Hibernate:                                                │    │
-│                                                                             │    │
-│  INSERT INTO tools (                                                        │    │
-│    name, description, vendor, monthly_cost,                                 │    │
-│    owner_department, status, category_id,                                   │    │
-│    active_users_count, created_at, updated_at                               │    │
-│  ) VALUES (                                                                 │    │
-│    'Slack', 'Team messaging', 'Slack Tech', 8.00,                           │    │
-│    'Engineering'::department_type, 'active'::tool_status_type, 1,           │    │
-│    0, NOW(), NOW()                                                          │    │
-│  ) RETURNING id;                                                            │    │
-│                                                                             │    │
-│  Result: id = 21 (auto-generated)                                           │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                ┌────────────────┴─────────────────┐                               │
-                │  Transaction committed            │                              │
-                │  Tool saved successfully          │                              │
-                └────────────────┬─────────────────┘                               │
-                                 │                                                 │
-              ┌──────────────────┴──────────────────┐                              │
-              │  RESPONSE FLOW (Going back up)      │                              │
-              └──────────────────┬──────────────────┘                              │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│  LAYER 6: DTO OUTPUT (Response Object)                                      │    │
-│  📁 dto/ToolResponse.java                                                   │    │
-├─────────────────────────────────────────────────────────────────────────────┤    │
-│  public class ToolResponse {                                                │    │
-│    private Long id;                     // From saved entity                │    │
-│    private String name;                                                     │    │
-│    private String category;             // From Category.name               │    │
-│    private BigDecimal monthlyCost;                                          │    │
-│    private BigDecimal totalMonthlyCost; // Calculated field                 │    │
-│    private Department ownerDepartment;                                      │    │
-│    private LocalDateTime createdAt;                                         │    │
-│                                                                             │    │
-│    public static ToolResponse fromEntity(Tool tool) {                       │    │
-│      return ToolResponse.builder()                                          │    │
-│        .id(tool.getId())                // Map entity fields to DTO         │    │
-│        .name(tool.getName())                                                │    │
-│        .category(tool.getCategory().getName()) // Flatten relationship      │    │
-│        .monthlyCost(tool.getMonthlyCost())                                  │    │
-│        .totalMonthlyCost(                                                   │    │
-│          tool.getMonthlyCost()                                              │    │
-│            .multiply(valueOf(tool.getActiveUsersCount()))                   │    │
-│        )                                                                    │    │
-│        .build();                                                            │    │
-│    }                                                                        │    │
-│  }                                                                          │    │
-│                                                                             │    │
-│  ROLE: API response contract, data transformation for clients               │    │
-│  INPUT: Tool entity from database                                           │    │
-│  OUTPUT: Clean JSON response (hides internal structure)                     │    │
-└────────────────────────────────┬────────────────────────────────────────────┘    │
-                                 │                                                 │
-                                 ▼                                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐    │
-│                      HTTP RESPONSE TO CLIENT                                │    │
-│  Status: 201 Created                                                        │    │
-│  Content-Type: application/json                                             │    │
-│  Body:                                                                      │    │
-│  {                                                                          │    │
-│    "id": 21,                                                                │    │
-│    "name": "Slack",                                                         │    │
-│    "description": "Team messaging platform",                                │    │
-│    "vendor": "Slack Technologies",                                          │    │
-│    "category": "Communication",                                             │    │
-│    "monthlyCost": 8.00,                                                     │    │
-│    "totalMonthlyCost": 0.00,                                                │    │
-│    "ownerDepartment": "Engineering",                                        │    │
-│    "status": "active",                                                      │    │
-│    "activeUsersCount": 0,                                                   │    │
-│    "createdAt": "2025-11-28T15:30:00",                                      │    │
-│    "updatedAt": "2025-11-28T15:30:00"                                       │    │
-│  }                                                                          │    │
-└─────────────────────────────────────────────────────────────────────────────┘    │
-                                                                                   │
-┌────────────────────────────────────────────────────────────────────────────────┐ │
-│  ERROR PATH (EXCEPTION HANDLING)                                               │ │
-│  📁 exception/GlobalExceptionHandler.java                      ◄─────────────────┘
-├────────────────────────────────────────────────────────────────────────────────┤
-│  @RestControllerAdvice                  // Global exception interceptor        │
-│  public class GlobalExceptionHandler {                                         │
-│                                                                                │
-│    // Validation errors from @Valid                                            │
-│    @ExceptionHandler(MethodArgumentNotValidException.class)                    │
-│    public ResponseEntity<ErrorResponse> handleValidation(exception) {          │
-│      Map<String, String> errors = new HashMap<>();                             │
-│      exception.getBindingResult().getFieldErrors()                             │
-│        .forEach(error -> errors.put(                                           │
-│          error.getField(),        // "name"                                    │
-│          error.getDefaultMessage() // "Name is required"                       │
-│        ));                                                                     │
-│                                                                                │
-│      return ResponseEntity.status(400).body(                                   │
-│        new ErrorResponse("Validation failed", errors)                          │
-│      );                                                                        │
-│    }                                                                           │
-│                                                                                │
-│    // Resource not found (from service layer)                                  │
-│    @ExceptionHandler(ResourceNotFoundException.class)                          │
-│    public ResponseEntity<ErrorResponse> handleNotFound(exception) {            │
-│      return ResponseEntity.status(404).body(                                   │
-│        new ErrorResponse("Resource not found", exception.getMessage())         │
-│      );                                                                        │
-│    }                                                                           │
-│                                                                                │
-│    // Generic errors                                                           │
-│    @ExceptionHandler(Exception.class)                                          │
-│    public ResponseEntity<ErrorResponse> handleGeneric(exception) {             │
-│      return ResponseEntity.status(500).body(                                   │
-│        new ErrorResponse("Internal server error", exception.getMessage())      │
-│      );                                                                        │
-│    }                                                                           │
-│  }                                                                             │
-│                                                                                │
-│  ROLE: Centralized error handling, consistent error responses                  │
-│  CATCHES: All exceptions from any layer                                        │
-│  OUTPUT: Standardized ErrorResponse DTO with HTTP status codes                 │
-└────────────────────────────────────────────────────────────────────────────────┘
+│  // Request DTO (input validation)                                          │
+│  export class CreateToolDto {                                               │
+│      @IsString()                                                            │
+│      @MinLength(2)                                                          │
+│      @MaxLength(100)                                                        │
+│      name: string;                                                          │
+│                                                                             │
+│      @IsOptional()                                                          │
+│      @IsString()                                                            │
+│      @MaxLength(500)                                                        │
+│      description?: string;                                                  │
+│                                                                             │
+│      @IsString()                                                            │
+│      @MinLength(1)                                                          │
+│      vendor: string;                                                        │
+│                                                                             │
+│      @IsOptional()                                                          │
+│      @IsUrl()                                                               │
+│      websiteUrl?: string;                                                   │
+│                                                                             │
+│      @IsNumber()                                                            │
+│      @Min(0)                                                                │
+│      @Type(() => Number)                                                    │
+│      monthlyCost: number;                                                   │
+│                                                                             │
+│      @IsNumber()                                                            │
+│      @Min(1)                                                                │
+│      categoryId: number;                                                    │
+│                                                                             │
+│      @IsEnum(Department)                                                    │
+│      ownerDepartment: Department;                                           │
+│                                                                             │
+│      @IsOptional()                                                          │
+│      @IsEnum(ToolStatus)                                                    │
+│      status?: ToolStatus;                                                   │
+│                                                                             │
+│      @IsOptional()                                                          │
+│      @IsNumber()                                                            │
+│      @Min(0)                                                                │
+│      activeUsersCount?: number;                                             │
+│  }                                                                          │
+│                                                                             │
+│  ROLE: Data validation, type safety, transformation                         │
+│  INPUT: JSON from HTTP request                                              │
+│  OUTPUT: Validated TypeScript object (or ValidationError)                   │
+│                                                                             │
+│  IF VALIDATION FAILS: Returns 400 Bad Request with detailed errors ──────┐  │
+└────────────────────────────────┬──────────────────────────────────────────┘│  │
+                                 │                                            │  │
+                                 ▼                                            │  │
+┌──────────────────────────────────────────────────────────────────────────┼──┤
+│  LAYER 3: SERVICE (Business Logic Layer)                                │  │
+│  📁 services/tool.service.ts                                            │  │
+├──────────────────────────────────────────────────────────────────────────┼──┤
+│  import { Injectable, NotFoundException } from '@nestjs/common';         │  │
+│  import { InjectRepository } from '@nestjs/typeorm';                     │  │
+│  import { Repository } from 'typeorm';                                   │  │
+│                                                                          │  │
+│  @Injectable()                                                           │  │
+│  export class ToolService {                                              │  │
+│      constructor(                                                        │  │
+│          @InjectRepository(Tool)                                         │  │
+│          private toolRepository: Repository<Tool>,                       │  │
+│          @InjectRepository(Category)                                     │  │
+│          private categoryRepository: Repository<Category>,               │  │
+│      ) {}                                                                │  │
+│                                                                          │  │
+│      async create(createToolDto: CreateToolDto): Promise<Tool> {        │  │
+│          // STEP 1: Verify category exists (business rule)               │  │
+│          const category = await this.categoryRepository.findOne({       │  │
+│              where: { id: createToolDto.categoryId }                     │  │
+│          });                                                             │  │
+│                                                                          │  │
+│          if (!category) {                                                │  │
+│              throw new NotFoundException(                                │ ─┘
+│                  `Category ${createToolDto.categoryId} not found`       │
+│              );                                                          │
+│          }                                                               │
+│                                                                          │
+│          // STEP 2: Create Tool entity from DTO                          │
+│          const tool = this.toolRepository.create({                       │
+│              name: createToolDto.name,                                   │
+│              description: createToolDto.description,                     │
+│              vendor: createToolDto.vendor,                               │
+│              websiteUrl: createToolDto.websiteUrl,                       │
+│              monthlyCost: createToolDto.monthlyCost,                     │
+│              categoryId: createToolDto.categoryId,                       │
+│              ownerDepartment: createToolDto.ownerDepartment,             │
+│              status: createToolDto.status || ToolStatus.ACTIVE,          │
+│              activeUsersCount: createToolDto.activeUsersCount || 0,      │
+│          });                                                             │
+│                                                                          │
+│          // STEP 3: Save to database (TypeORM handles INSERT)            │
+│          const savedTool = await this.toolRepository.save(tool);         │
+│                                                                          │
+│          // STEP 4: Load relationships                                   │
+│          return this.toolRepository.findOne({                            │
+│              where: { id: savedTool.id },                                │
+│              relations: ['category'],  // Load category relation         │
+│          });                                                             │
+│      }                                                                   │
+│  }                                                                       │
+│                                                                          │
+│  ROLE: Business logic, validation, transaction orchestration            │
+│  INPUT: Validated DTO + injected repositories                           │
+│  OUTPUT: Tool entity or throw exception                                 │
+└────────────────────────────────┬─────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  LAYER 4: ENTITY (TypeORM Entity - ORM Mapping)                            │
+│  📁 entities/tool.entity.ts                                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  import { Entity, Column, PrimaryGeneratedColumn, ManyToOne,               │
+│           CreateDateColumn, UpdateDateColumn } from 'typeorm';              │
+│                                                                             │
+│  @Entity('tools')                     // Maps to 'tools' table              │
+│  export class Tool {                                                        │
+│      @PrimaryGeneratedColumn()                                              │
+│      id: number;                                                            │
+│                                                                             │
+│      @Column({ type: 'varchar', length: 100, unique: true })               │
+│      name: string;                                                          │
+│                                                                             │
+│      @Column({ type: 'varchar', length: 500, nullable: true })             │
+│      description?: string;                                                  │
+│                                                                             │
+│      @Column({ type: 'varchar', length: 100 })                             │
+│      vendor: string;                                                        │
+│                                                                             │
+│      @Column({ type: 'varchar', length: 255, nullable: true })             │
+│      websiteUrl?: string;                                                   │
+│                                                                             │
+│      @Column({ type: 'numeric', precision: 10, scale: 2 })                 │
+│      monthlyCost: number;                                                   │
+│                                                                             │
+│      @Column({ type: 'int', default: 0 })                                  │
+│      activeUsersCount: number;                                              │
+│                                                                             │
+│      // Foreign key relationship                                            │
+│      @Column()                                                              │
+│      categoryId: number;                                                    │
+│                                                                             │
+│      @ManyToOne(() => Category, category => category.tools, {              │
+│          eager: false,                                                      │
+│      })                                                                     │
+│      category: Category;                                                    │
+│                                                                             │
+│      // PostgreSQL ENUM columns                                             │
+│      @Column({                                                              │
+│          type: 'enum',                                                      │
+│          enum: Department,                                                  │
+│          enumName: 'department_type',                                       │
+│      })                                                                     │
+│      ownerDepartment: Department;                                           │
+│                                                                             │
+│      @Column({                                                              │
+│          type: 'enum',                                                      │
+│          enum: ToolStatus,                                                  │
+│          enumName: 'tool_status_type',                                      │
+│          default: ToolStatus.ACTIVE,                                        │
+│      })                                                                     │
+│      status: ToolStatus;                                                    │
+│                                                                             │
+│      // Timestamps (auto-managed by TypeORM)                                │
+│      @CreateDateColumn()                                                    │
+│      createdAt: Date;                                                       │
+│                                                                             │
+│      @UpdateDateColumn()                                                    │
+│      updatedAt: Date;                                                       │
+│  }                                                                          │
+│                                                                             │
+│  ROLE: Database schema definition, ORM mapping                              │
+│  INPUT: TypeScript class with decorators                                    │
+│  OUTPUT: SQL INSERT/UPDATE/SELECT via TypeORM                               │
+│  GENERATES: Type-safe database operations                                   │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DATABASE (PostgreSQL 15)                            │
+│  📊 Table: tools                                                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  SQL Generated by TypeORM:                                                  │
+│                                                                             │
+│  INSERT INTO tools (                                                        │
+│    name, description, vendor, website_url, monthly_cost,                    │
+│    category_id, owner_department, status,                                   │
+│    active_users_count, created_at, updated_at                               │
+│  ) VALUES (                                                                 │
+│    'Slack',                                                                 │
+│    'Team messaging platform',                                               │
+│    'Slack Technologies',                                                    │
+│    'https://slack.com',                                                     │
+│    8.00,                                                                    │
+│    1,                                                                       │
+│    'Engineering'::department_type,                                          │
+│    'active'::tool_status_type,                                              │
+│    0,                                                                       │
+│    NOW(),                                                                   │
+│    NOW()                                                                    │
+│  ) RETURNING *;                                                             │
+│                                                                             │
+│  Result: Tool(id=21, created_at='2025-11-28 16:30:00', ...)                 │
+└────────────────────────────────┬────────────────────────────────────────────┘
+                                 │
+              ┌──────────────────┴──────────────────┐
+              │  RESPONSE FLOW (Going back up)      │
+              └──────────────────┬──────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      HTTP RESPONSE TO CLIENT                                │
+│  Status: 201 Created                                                        │
+│  Content-Type: application/json                                             │
+│  Body:                                                                      │
+│  {                                                                          │
+│    "id": 21,                                                                │
+│    "name": "Slack",                                                         │
+│    "description": "Team messaging platform",                                │
+│    "vendor": "Slack Technologies",                                          │
+│    "websiteUrl": "https://slack.com",                                       │
+│    "category": {                                                            │
+│        "id": 1,                                                             │
+│        "name": "Communication"                                              │
+│    },                                                                       │
+│    "monthlyCost": 8.00,                                                     │
+│    "ownerDepartment": "Engineering",                                        │
+│    "status": "active",                                                      │
+│    "activeUsersCount": 0,                                                   │
+│    "createdAt": "2025-11-28T16:30:00.000Z",                                 │
+│    "updatedAt": "2025-11-28T16:30:00.000Z"                                  │
+│  }                                                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────────────┐
+│  ERROR HANDLING (NestJS Exception Filters)                                 │
+│  📁 Built-in + Custom Exception Filters                                    │
+├────────────────────────────────────────────────────────────────────────────┤
+│  import { ExceptionFilter, Catch, ArgumentsHost, HttpException,           │
+│           HttpStatus } from '@nestjs/common';                              │
+│  import { Response } from 'express';                                       │
+│                                                                            │
+│  // Global exception filter                                                │
+│  @Catch()                                                                  │
+│  export class AllExceptionsFilter implements ExceptionFilter {             │
+│      catch(exception: unknown, host: ArgumentsHost) {                      │
+│          const ctx = host.switchToHttp();                                  │
+│          const response = ctx.getResponse<Response>();                     │
+│                                                                            │
+│          let status = HttpStatus.INTERNAL_SERVER_ERROR;                    │
+│          let message = 'Internal server error';                            │
+│                                                                            │
+│          // Handle HTTP exceptions                                         │
+│          if (exception instanceof HttpException) {                         │
+│              status = exception.getStatus();                               │
+│              const exceptionResponse = exception.getResponse();            │
+│              message = typeof exceptionResponse === 'string'               │
+│                  ? exceptionResponse                                       │
+│                  : (exceptionResponse as any).message;                     │
+│          }                                                                 │
+│                                                                            │
+│          // Handle validation errors (class-validator)                     │
+│          if (Array.isArray(message)) {                                     │
+│              response.status(status).json({                                │
+│                  statusCode: status,                                       │
+│                  error: 'Validation failed',                               │
+│                  messages: message,                                        │
+│                  timestamp: new Date().toISOString(),                      │
+│              });                                                           │
+│              return;                                                       │
+│          }                                                                 │
+│                                                                            │
+│          // Standard error response                                        │
+│          response.status(status).json({                                    │
+│              statusCode: status,                                           │
+│              error: message,                                               │
+│              timestamp: new Date().toISOString(),                          │
+│          });                                                               │
+│      }                                                                     │
+│  }                                                                         │
+│                                                                            │
+│  // Usage in main.ts                                                       │
+│  app.useGlobalFilters(new AllExceptionsFilter());                          │
+│                                                                            │
+│  ROLE: Centralized exception handling, standardized error responses        │
+│  CATCHES: HttpException, ValidationError, TypeORMError, generic Error      │
+│  OUTPUT: Consistent JSON error format                                      │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## 🎯 Key Concepts Summary
+## 🎯 Key TypeScript/NestJS Concepts
 
-### **1. Separation of Concerns**
-Each layer has a single responsibility:
-- **Controller**: HTTP routing only
-- **DTO**: API contract & validation
-- **Service**: Business logic & orchestration
-- **Repository**: Database queries
-- **Entity**: Database structure
-- **Exception Handler**: Error responses
-
-### **2. Data Flow Transformation**
-```
-JSON Request → CreateToolRequest DTO → Tool Entity → Database
-Database → Tool Entity → ToolResponse DTO → JSON Response
-```
-
-### **3. Why This Structure?**
-- **Testability**: Each layer can be tested independently
-- **Maintainability**: Changes to API don't affect database structure
-- **Security**: DTOs prevent over-posting attacks
-- **Flexibility**: Can change database without changing API
-- **Reusability**: Services can be called from multiple controllers
-
-### **4. Comparison to Other Layers**
-
-| Layer | TypeScript NestJS | Java Spring Boot | Python FastAPI |
-|-------|-------------------|------------------|----------------|
-| Controller | `@Controller()` | `@RestController` | `@app.post()` |
-| DTO | class-validator decorators | `@Valid` annotations | Pydantic models |
-| Service | `@Injectable()` class | `@Service` class | Service functions |
-| Repository | TypeORM Repository | `JpaRepository` | SQLAlchemy ORM |
-| Entity | `@Entity()` class | `@Entity` class | SQLAlchemy models |
-
-### **5. Transaction Flow**
-```
-@Transactional annotation ensures:
-├─ All database operations succeed together
-├─ Automatic rollback on exceptions
-└─ Connection pool management
-```
-
-### **6. The Magic of Decorators**
+### **1. Decorators - Metadata Magic**
 ```typescript
-@Controller()    → Makes class handle HTTP requests
-@Post()          → Maps to HTTP POST method
-@Body()          → Extracts request body
-@Injectable()    → Marks as NestJS service (dependency injection)
-@Entity()        → Maps to database table
-@Column()        → Maps to table column
-@BeforeInsert()  → Runs before INSERT
+// Decorators add metadata for dependency injection, validation, routing
+@Controller('tools')              // Routing
+export class ToolController {
+    @Post()                       // HTTP method
+    @HttpCode(201)                // Status code
+    async create(
+        @Body() dto: CreateToolDto  // Parameter injection
+    ) { }
+}
+
+@Entity('tools')                  // ORM mapping
+export class Tool {
+    @PrimaryGeneratedColumn()     // Auto-increment ID
+    id: number;
+    
+    @Column()                     // Database column
+    name: string;
+}
 ```
 
-## 📝 Complete CRUD Operation Examples
+### **2. Dependency Injection (IoC Container)**
+```typescript
+// NestJS manages object creation and lifecycle
+@Injectable()
+export class ToolService {
+    constructor(
+        @InjectRepository(Tool)
+        private toolRepo: Repository<Tool>,  // Auto-injected by NestJS!
+    ) {}
+}
 
-### CREATE (POST)
-```
-Client Request → Controller (@PostMapping)
-              → Validate DTO (@Valid)
-              → Service.createTool()
-              → Repository.save()
-              → Database INSERT
-              → Return ToolResponse (201 Created)
-```
-
-### READ (GET)
-```
-Client Request → Controller (@GetMapping)
-              → Service.getToolById(id)
-              → Repository.findById()
-              → Database SELECT
-              → Return ToolResponse (200 OK)
+// No need for manual instantiation:
+// const repo = new Repository();  ❌
+// const service = new ToolService(repo);  ❌
+// NestJS does it all!  ✅
 ```
 
-### UPDATE (PUT)
-```
-Client Request → Controller (@PutMapping)
-              → Validate DTO (@Valid)
-              → Service.updateTool(id, dto)
-              → Repository.findById() + save()
-              → Database SELECT + UPDATE
-              → Return ToolResponse (200 OK)
+### **3. Async/Await (Promises)**
+```typescript
+// TypeScript async/await (similar to Python/Rust)
+async function createTool(dto: CreateToolDto): Promise<Tool> {
+    const category = await categoryRepo.findOne(dto.categoryId);
+    //                    ^^^^^ Pauses here, event loop continues
+    
+    const tool = await toolRepo.save(toolEntity);
+    //                 ^^^^^ Pauses again
+    
+    return tool;
+}
+
+// All I/O operations are non-blocking
 ```
 
-### DELETE
-```
-Client Request → Controller (@DeleteMapping)
-              → Service.deleteTool(id)
-              → Repository.deleteById()
-              → Database DELETE
-              → Return 204 No Content
+### **4. Type Safety Everywhere**
+```typescript
+// TypeScript compiler checks types at compile time
+interface CreateToolDto {
+    name: string;
+    monthlyCost: number;
+}
+
+function create(dto: CreateToolDto) {
+    console.log(dto.name.toUpperCase());  // ✅ OK
+    // console.log(dto.name.toFixed(2));  // ❌ Error: toFixed doesn't exist on string
+}
 ```
 
-### LIST with FILTERS
+### **5. TypeORM Query Builder**
+```typescript
+// Type-safe database queries
+const tools = await toolRepository
+    .createQueryBuilder('tool')
+    .leftJoinAndSelect('tool.category', 'category')
+    .where('tool.status = :status', { status: 'active' })
+    .andWhere('tool.ownerDepartment = :dept', { dept: 'Engineering' })
+    .orderBy('tool.createdAt', 'DESC')
+    .getMany();
+
+// Autocomplete and type checking for everything!
 ```
-Client Request → Controller (@GetMapping with @RequestParam)
-              → Service.getAllTools(filters)
-              → Repository.findWithFilters() [@Query JPQL]
-              → Database SELECT with WHERE
-              → Return ToolListResponse (200 OK)
+
+## 📝 Complete CRUD Operations Flow
+
+### **CREATE (POST /api/tools)**
 ```
+Client → NestJS Controller (@Post decorator)
+      → class-validator validates DTO
+      → Service layer (business logic)
+      → TypeORM Repository (INSERT)
+      → PostgreSQL database
+      → Return entity (201 Created)
+```
+
+### **READ (GET /api/tools/{id})**
+```
+Client → NestJS Controller (@Get(':id'))
+      → Extract path parameter
+      → Service layer
+      → TypeORM findOne (SELECT WHERE id = ?)
+      → PostgreSQL database
+      → Return entity (200 OK)
+```
+
+### **UPDATE (PUT /api/tools/{id})**
+```
+Client → NestJS Controller (@Put(':id'))
+      → class-validator validates DTO
+      → Service layer (fetch + update)
+      → TypeORM update/save (UPDATE)
+      → PostgreSQL database
+      → Return updated entity (200 OK)
+```
+
+### **DELETE (DELETE /api/tools/{id})**
+```
+Client → NestJS Controller (@Delete(':id'))
+      → Service layer
+      → TypeORM delete/remove
+      → PostgreSQL database
+      → Return 204 No Content
+```
+
+### **LIST with FILTERS (GET /api/tools?department=Engineering)**
+```
+Client → NestJS Controller (with @Query decorator)
+      → Service layer builds query
+      → TypeORM QueryBuilder (WHERE clauses)
+      → PostgreSQL WHERE
+      → Return Tool[] (200 OK)
+```
+
+## 🔥 TypeScript/NestJS Advantages
+
+✅ **Type Safety** - Catch errors at compile time, not runtime  
+✅ **Decorators** - Clean, declarative code (routing, validation, DI)  
+✅ **Dependency Injection** - Built-in IoC container (like Spring Boot)  
+✅ **Async/Await** - Native async support with Promises  
+✅ **TypeORM** - Powerful ORM with QueryBuilder and migrations  
+✅ **Auto Documentation** - Swagger/OpenAPI via decorators  
+
+## 🆚 TypeScript vs Other Stacks
+
+| Feature | TypeScript NestJS | Java Spring Boot | Python FastAPI |
+|---------|-------------------|------------------|----------------|
+| **Type Safety** | ⭐⭐⭐⭐⭐ Compile-time | ⭐⭐⭐⭐⭐ Compile-time | ⭐⭐⭐⭐ Runtime |
+| **Learning Curve** | ⭐⭐⭐ Moderate | ⭐⭐⭐⭐ Steep | ⭐⭐ Easy |
+| **Performance** | ⭐⭐⭐⭐ Fast (V8) | ⭐⭐⭐⭐⭐ Very fast | ⭐⭐⭐⭐ Fast |
+| **Architecture** | Modular (Angular-like) | Enterprise (Spring) | Lightweight |
+| **Decorators** | `@Injectable()` | `@Service` | `@app.post()` |
+| **ORM** | TypeORM | Hibernate/JPA | SQLAlchemy |
+| **DI Container** | ✅ Built-in | ✅ Built-in | ❌ Manual |
+| **Async Model** | Event loop (Node.js) | Virtual threads | Event loop |
+| **Ecosystem** | npm (largest) | Maven/Gradle | pip |
+
+## 💡 Why TypeScript + NestJS?
+
+1. **JavaScript Everywhere** - Same language for frontend and backend
+2. **Type Safety** - TypeScript catches bugs at compile time
+3. **Architecture** - Opinionated structure (like Angular/Spring)
+4. **DI & Decorators** - Enterprise patterns in JavaScript
+5. **Performance** - V8 engine is very fast
+6. **Huge Ecosystem** - npm has everything
+
+## 🏗️ NestJS Architecture Philosophy
+
+**Inspired by Angular + Spring Boot:**
+- **Modules** - Organize features (like Angular modules)
+- **Controllers** - Handle HTTP requests (like Spring controllers)
+- **Services** - Business logic (like Spring services)
+- **Providers** - Anything injectable (DI pattern)
+- **Guards** - Authentication/authorization
+- **Interceptors** - Transform requests/responses
+- **Pipes** - Validate/transform data
+
+## ⚠️ TypeScript/NestJS Trade-offs
+
+- **Node.js Single-Threaded** - CPU-intensive tasks can block event loop
+- **Callback Hell** - Even with async/await, can get complex
+- **Runtime Overhead** - TypeScript compiles to JavaScript (loses types)
+- **npm Dependencies** - Large node_modules folder (GB!)
+- **But** → Trade for developer productivity and type safety! 🚀
 
 ---
 
-**This architecture ensures:**
-✅ Clean separation of concerns  
-✅ Easy testing at each layer  
-✅ Type safety with DTOs  
-✅ Automatic SQL generation  
-✅ Consistent error handling  
-✅ Transaction management  
-✅ Validation before business logic
+**This TypeScript NestJS architecture ensures:**
+✅ Type-safe code with compile-time checks  
+✅ Clean architecture with dependency injection  
+✅ Declarative validation via class-validator  
+✅ Async/await for non-blocking I/O  
+✅ TypeORM for type-safe database operations  
+✅ PostgreSQL ENUM support via TypeScript enums
 
