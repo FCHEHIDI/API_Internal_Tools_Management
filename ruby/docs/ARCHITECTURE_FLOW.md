@@ -334,13 +334,13 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 
 ### **4. Comparison to Other Layers**
 
-| Layer | Java Spring Boot | Rust Axum | Python FastAPI |
-|-------|------------------|-----------|----------------|
-| Controller | `@RestController` | `Router::new()` | `@app.post()` |
-| DTO | `@Valid` annotations | Serde `deserialize` | Pydantic models |
-| Service | `@Service` class | Regular functions | Service functions |
-| Repository | `JpaRepository` | Direct SQL queries | SQLAlchemy ORM |
-| Entity | `@Entity` class | Structs | SQLAlchemy models |
+| Layer | Ruby Rails | Java Spring Boot | Python FastAPI |
+|-------|------------|------------------|----------------|
+| Controller | controller actions | `@RestController` | `@app.post()` |
+| Params | Strong Parameters | `@Valid` annotations | Pydantic models |
+| Service | Service objects | `@Service` class | Service functions |
+| Repository | ActiveRecord models | `JpaRepository` | SQLAlchemy ORM |
+| Model | ActiveRecord models | `@Entity` class | SQLAlchemy models |
 
 ### **5. Transaction Flow**
 ```
@@ -350,15 +350,15 @@ Database → Tool Entity → ToolResponse DTO → JSON Response
 └─ Connection pool management
 ```
 
-### **6. The Magic of Annotations**
-```java
-@RestController  → Makes class handle HTTP requests
-@RequestMapping  → Defines base URL path
-@PostMapping     → Maps to HTTP POST method
-@Valid           → Triggers validation
-@Transactional   → Wraps in database transaction
-@Entity          → Maps to database table
-@PrePersist      → Runs before INSERT
+### **6. The Magic of Rails Conventions**
+```ruby
+has_many :tools         → ActiveRecord association
+belongs_to :category    → Foreign key relationship
+validates :name         → Model validation
+enum status:            → Enum definition
+before_create           → Lifecycle callback
+scope :active           → Query scope
+render json:            → JSON response
 ```
 
 ## 📝 Complete CRUD Operation Examples
